@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <mpfr.h>
 
+#include "ast.h"
 #include "actions.h"
 
 void ast_action_show(AST * p, FILE * o)

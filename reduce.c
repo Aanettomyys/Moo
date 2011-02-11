@@ -1,4 +1,5 @@
 #include "ast.h"
+#include "actions.h"
 
 static ASTStack * ast_iterate(AST * a)
 {
