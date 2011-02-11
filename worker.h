@@ -6,7 +6,6 @@
 typedef struct
 {
 	char * in;
-	char * out;
 	ParserParam p;
 	ParserRList * plr;
 } Worker;

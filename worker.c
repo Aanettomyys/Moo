@@ -13,7 +13,6 @@ void worker_init(Worker * w, const char * in)
 void worker_clear(Worker * w)
 {
 	free(w->in);
-	free(w->out);
 	//TODO parser_l_rlist_clear(w->plr);
 	yylex_destroy(w->p.scanner);
 }

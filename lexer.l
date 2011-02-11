@@ -16,6 +16,7 @@
 WS	[ \n\r\t]*
 WORD	[a-zA-Z]+
 INT	[0-9]+
+NUM	[0-9]+
 
 %%
 
@@ -57,9 +58,13 @@ INT	[0-9]+
 	"^"		return EXPR_POW;
 	"("		return EXPR_LBR;
 	")"		return EXPR_RBR;
-	"sin"		return EXPR_FUNC_SIN;
-	"cos"		return EXPR_FUNC_COS;
-	{INT}		yylval->word = strdup(yytext); return EXPR_NUM; 
+	"sin"		yylval->ast = ast_bif1_new(AST_BIF_SIN); return EXPR_BIF1;
+	"cos"		yylval->ast = ast_bif1_new(AST_BIF_COS); return EXPR_BIF1;
+	"tan"		yylval->ast = ast_bif1_new(AST_BIF_TAN); return EXPR_BIF1;
+	"sec"		yylval->ast = ast_bif1_new(AST_BIF_SEC); return EXPR_BIF1;
+	"csc"		yylval->ast = ast_bif1_new(AST_BIF_CSC); return EXPR_BIF1;
+	"cot"		yylval->ast = ast_bif1_new(AST_BIF_COT); return EXPR_BIF1;
+	{NUM}		yylval->ast = ast_numeric_new(yytext); return EXPR_NUM; 
 	"="		return EXPR_EQL;
 	","		return EXPR_SEP;
 	{WORD}		yylval->word = strdup(yytext); return EXPR_VAR;

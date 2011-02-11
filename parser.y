@@ -23,7 +23,7 @@
 %left EXPR_MUL EXPR_DIV
 %right EXPR_POW
 
-%token EXPR_FUNC_SIN EXPR_FUNC_COS
+%token EXPR_BIF1
 %token EXPR_VAR EXPR_NUM
 
 %%
@@ -74,20 +74,16 @@ expr:		expr EXPR_ADD expr { $<ast>$ = ast_op_new(AST_OP_ADD, $<ast>1, $<ast>3); 
 	|	expr EXPR_DIV expr { $<ast>$ = ast_op_new(AST_OP_DIV, $<ast>1, $<ast>3); }
 	|	EXPR_LBR expr EXPR_RBR { $<ast>$ = $<ast>2; }
 	|	expr EXPR_POW expr { $<ast>$ = ast_op_new(AST_OP_POW, $<ast>1, $<ast>3); }
-	|	expr_atom { $<ast>$ = $<ast>1; }
-	|	expr_fun EXPR_LBR expr EXPR_RBR { $<ast>$ = ast_bif1_set_arg($<ast>1, $<ast>3); }
+	|	var { $<ast>$ = $<ast>1; }
+	|	EXPR_NUM { $<ast>$ = $<ast>1; }
+	|	EXPR_BIF1 EXPR_LBR expr EXPR_RBR { $<ast>$ = ast_bif1_set_arg($<ast>1, $<ast>3); }
 	;
 
-expr_atom:	EXPR_NUM { $<ast>$ = ast_numeric_new($<word>1); free($<word>1); }
-	|	EXPR_VAR EXPR_LBR var_depends EXPR_RBR { $<ast>$ = ast_var_new_with_ldn($<word>1, $<ldn>3); }
+var:		EXPR_VAR EXPR_LBR var_depends EXPR_RBR { $<ast>$ = ast_var_new_with_ldn($<word>1, $<ldn>3); }
 	|	EXPR_VAR { $<ast>$ = ast_var_new($<word>1); }
 	;
 
 var_depends:	EXPR_VAR { $<ldn>$ = ast_l_ldn_new($<word>1); }
 	|	EXPR_VAR EXPR_SEP var_depends { $<ldn>$ = ast_l_ldn_append($<ldn>3, $<word>1); }
-	;
-
-expr_fun:	EXPR_FUNC_SIN { $<ast>$ = ast_bif1_new(AST_BIF_SIN); }
-	|	EXPR_FUNC_COS { $<ast>$ = ast_bif1_new(AST_BIF_COS); }
 	;
 %%

@@ -17,6 +17,9 @@ void runParser(char * msg)
 		{
 			printf("Получено выражение: ");
 			ast_action_show(it->p.a.ast, stdout);
+			ast_action_reduce(it->p.a.ast);
+			printf("\nРедукция: ");
+			ast_action_show(it->p.a.ast, stdout);
 			printf("\n");
 		}
 		else
