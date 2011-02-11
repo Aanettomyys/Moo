@@ -1,6 +1,9 @@
 #ifndef __AST_H__
 #define __AST_H__
 
+#include <string.h>
+#include <stdarg.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <mpfr.h>
@@ -101,6 +104,27 @@ typedef struct _ASTStack
 {
 	ASTNode * head;
 } ASTStack;
+
+typedef struct _ParserRList
+{
+	bool is_ast;
+	union 
+	{
+		char * s;
+		struct
+		{
+			AST * ast;
+			LASTActions * lasta;
+		} a;
+	} p;
+	struct _ParserRList * next;
+} ParserRList;
+
+/**
+ * parser_l_push_back(prl, is_ast, char c);
+ * parser_l_push_back(prl, is_ast, AST * a, LASTActions * lasta);
+ */
+ParserRList *	parser_l_push_back(ParserRList * prl, bool is_ast, ...);
 
 LDepNames *	ast_l_ldn_new(char * n1);
 LDepNames *	ast_l_ldn_append(LDepNames * ldn, char * nn);

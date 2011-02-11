@@ -10,6 +10,7 @@ typedef union _ParserType
 	LDepNames * ldn;
 	LASTActions * lasta;
 	ASTAction asta;
+	ParserRList * prl;
 } ParserType;
 
 #define YYSTYPE ParserType

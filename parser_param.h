@@ -13,8 +13,7 @@
 typedef struct _ParserParam
 {
 	yyscan_t scanner;
-	AST * ast;
-	LASTActions * lasta;
+	ParserRList * head;
 } ParserParam;
 
 #define YYPARSE_PARAM data

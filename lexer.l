@@ -21,7 +21,7 @@ INT	[0-9]+
 
 <INITIAL>{
 	"%%"		BEGIN(common); return ENTRY;
-	.		yylval->word = strdup(yytext); return TEXT;
+	.|\n		yylval->word = strdup(yytext); return TEXT;
 }
 <common>{
 	{WS}		/* eat */

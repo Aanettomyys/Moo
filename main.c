@@ -10,8 +10,7 @@ static int initParserParam(ParserParam * param)
 	int ret = 0;
 
 	ret = yylex_init(&param->scanner);
-	param->ast = NULL;
-	param->lasta = NULL;
+	param->head = NULL;
 	return ret;
 }
 
@@ -29,7 +28,23 @@ void runParser(FILE * fp)
 	yy_switch_to_buffer(state, p.scanner);
 	yyparse(&p);
 	destroyParserParam(&p);
-	printf("\n=================\n");
+	printf("======= Парсинг закончен =======\n");
+	ParserRList * it = p.head;
+	while(it != NULL)
+	{
+		if(it->is_ast)
+		{
+			printf("Получено выражение: ");
+			ast_action_show(it->p.a.ast, stdout);
+			printf("\n");
+		}
+		else
+		{
+			printf("Получен текст : `%s'\n", it->p.s);
+		}
+		it = it->next;
+	}
+	printf("================================\n");
 }
 
 int main(int argc, char ** argv)

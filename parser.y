@@ -29,38 +29,20 @@
 %%
 
 all:		/* empty */
-	|	TEXT all 
-	|	parsable all
+	|	TEXT all
+		{ 
+			((ParserParam*)data)->head = parser_l_push_back(((ParserParam*)data)->head, false, $<word>1[0]);
+			free($<word>1);
+		} 
+	|	parsable all 
+		{
+			$<prl>1->next = ((ParserParam *)data)->head;
+			((ParserParam *)data)->head = $<prl>1;
+		}
 	;
 parsable:	ENTRY actions params expression 
 		{ 
-			printf("Парсинг успешно завершен!\n");
-			printf("Получено выражение: ");
-			ast_action_show($<ast>4, stdout);
-			if($<lasta>2 != NULL)
-			{
-				printf("\nПолучены следующие действия:");
-				for(size_t i = 0; i < $<lasta>2->size; i++)
-				{
-					switch($<lasta>2->actions[i])
-					{
-					case AST_ACTN_SHOW :
-						printf(" SHOW");
-						break;
-					case AST_ACTN_REDUCE :
-						printf(" REDUCE");
-						break;
-					};
-				};
-			}
-			else
-			{
-				printf("\nНет переданных действий");
-			}
-			printf("\nРедуцируем: ");
-			ast_action_reduce($<ast>4);
-			ast_action_show($<ast>4, stdout);
-			printf("\nКонец\n");
+			$<prl>$ = parser_l_push_back(NULL, true, $<ast>4, $<lasta>2);
 		}
 	;
 actions:	ACTN_BEGIN action_list ACTN_END { $<lasta>$ = $<lasta>2; }

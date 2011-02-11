@@ -5,7 +5,8 @@
 
 void ast_action_show(AST * p, FILE * o)
 {
-	fprintf(o, "(");
+	if(p->klass != AST_NUMERIC)
+		fprintf(o, "(");
 	switch(p->klass)
 	{
 		case AST_NUMERIC :
@@ -58,5 +59,6 @@ void ast_action_show(AST * p, FILE * o)
 				fprintf(o, ")");
 			break;
 	};
-	fprintf(o, ")");
+	if(p->klass != AST_NUMERIC)
+		fprintf(o, ")");
 }
