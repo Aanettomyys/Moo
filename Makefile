@@ -2,7 +2,7 @@ CFLAGS= -Wall -std=gnu99 -g -Wextra
 CC=gcc
 OBJS=lexer.o parser.tab.o show.o lists.o \
 	main.o ast.o utils.o reduce.o
-LDFLAGS= -lgmp -lmpfr
+LDFLAGS=-lmpfr -lgmp
 
 all: $(OBJS)
 	$(CC) -o test $(OBJS) $(LDFLAGS)
