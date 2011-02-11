@@ -3,7 +3,6 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <gmp.h>
 #include <mpfr.h>
 
 typedef enum
@@ -115,7 +114,7 @@ ASTStack *	ast_s_new();
 AST *		ast_s_pop(ASTStack * s);
 void		ast_s_push(ASTStack * s, AST * a);
 
-AST * 	ast_integer_new(const char * str);
+AST * 	ast_numeric_new(const char * str);
 AST * 	ast_op_new(ASTOpType t, AST * l, AST * r);
 AST * 	ast_var_new(char * name);
 AST *	ast_var_new_with_ldn(char * name, LDepNames * ldn);

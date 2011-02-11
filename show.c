@@ -1,3 +1,6 @@
+#include <stdio.h>
+#include <mpfr.h>
+
 #include "actions.h"
 
 void ast_action_show(AST * p, FILE * o)
@@ -6,7 +9,7 @@ void ast_action_show(AST * p, FILE * o)
 	switch(p->klass)
 	{
 		case AST_NUMERIC :
-			mpfr_out_str(o, 10, 0, ((ASTInteger *)p->p)->v, MPFR_RNDZ);
+			mpfr_out_str(o, 10, 4, ((ASTNumeric *)p->p)->v, GMP_RNDZ);
 			break;
 		case AST_BIF1 :
 			switch(((ASTBIF1 *)(p->p))->type)

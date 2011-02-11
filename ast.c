@@ -6,7 +6,7 @@ AST * ast_numeric_new(const char * str)
 	ASTNumeric * p = malloc(sizeof(ASTNumeric));
 	a->klass = AST_NUMERIC;
 	a->p = p;
-	mpfr_init_set_str(p->v, str, 10, MPFR_RNDZ);
+	mpfr_init_set_str(p->v, str, 10, GMP_RNDZ);
 	return a;
 }
 

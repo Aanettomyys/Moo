@@ -7,6 +7,7 @@
 #include "parser_param.h"
 #include "parser_type.h"
 #include "ast.h"
+#include "actions.h"
 
 %}
 
@@ -23,7 +24,7 @@
 %right EXPR_POW
 
 %token EXPR_FUNC_SIN EXPR_FUNC_COS
-%token EXPR_VAR EXPR_INT
+%token EXPR_VAR EXPR_NUM
 
 %%
 
@@ -95,7 +96,7 @@ expr:		expr EXPR_ADD expr { $<ast>$ = ast_op_new(AST_OP_ADD, $<ast>1, $<ast>3); 
 	|	expr_fun EXPR_LBR expr EXPR_RBR { $<ast>$ = ast_bif1_set_arg($<ast>1, $<ast>3); }
 	;
 
-expr_atom:	EXPR_INT { $<ast>$ = ast_integer_new($<word>1); free($<word>1); }
+expr_atom:	EXPR_NUM { $<ast>$ = ast_numeric_new($<word>1); free($<word>1); }
 	|	EXPR_VAR EXPR_LBR var_depends EXPR_RBR { $<ast>$ = ast_var_new_with_ldn($<word>1, $<ldn>3); }
 	|	EXPR_VAR { $<ast>$ = ast_var_new($<word>1); }
 	;

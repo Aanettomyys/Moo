@@ -59,7 +59,7 @@ INT	[0-9]+
 	")"		return EXPR_RBR;
 	"sin"		return EXPR_FUNC_SIN;
 	"cos"		return EXPR_FUNC_COS;
-	{INT}		yylval->word = strdup(yytext); return EXPR_INT; 
+	{INT}		yylval->word = strdup(yytext); return EXPR_NUM; 
 	"="		return EXPR_EQL;
 	","		return EXPR_SEP;
 	{WORD}		yylval->word = strdup(yytext); return EXPR_VAR;

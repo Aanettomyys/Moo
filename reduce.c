@@ -49,16 +49,16 @@ void ast_action_reduce(AST * a)
 					switch(op->type)
 					{
 						case AST_OP_ADD :
-							mpfr_add(ai->v, l->v, r->v, MPFR_RNDZ);
+							mpfr_add(ai->v, l->v, r->v, GMP_RNDZ);
 							break;
 						case AST_OP_SUB :
-							mpfr_sub(ai->v, l->v, r->v, MPFR_RNDZ);
+							mpfr_sub(ai->v, l->v, r->v, GMP_RNDZ);
 							break;
 						case AST_OP_MUL :
-							mpfr_mul(ai->v, l->v, r->v, MPFR_RNDZ);
+							mpfr_mul(ai->v, l->v, r->v, GMP_RNDZ);
 							break;
 						case AST_OP_DIV :
-							mpfr_div(ai->v, l->v, r->v, MPFR_RNDZ);
+							mpfr_div(ai->v, l->v, r->v, GMP_RNDZ);
 							break;
 						default: break;
 					}
