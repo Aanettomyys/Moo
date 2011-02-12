@@ -9,7 +9,7 @@ void ast_action_show(AST * p, FILE * o)
 	switch(p->klass)
 	{
 		case AST_NUMERIC :
-			mpfr_out_str(o, 10, 4, ((ASTNumeric *)p->p)->v, GMP_RNDZ);
+			mpfr_out_str(o, 10, 7, ((ASTNumeric *)p->p)->v, GMP_RNDZ);
 			break;
 		case AST_BIF1 :
 			switch(((ASTBIF1 *)(p->p))->type)
@@ -33,7 +33,9 @@ void ast_action_show(AST * p, FILE * o)
 				case AST_BIF_ASINH : fprintf(o, "\\asinh"); break;
 				case AST_BIF_ATANH : fprintf(o, "\\atanh"); break;
 			};
+			fprintf(o, "(");
 			ast_action_show(((ASTBIF1 *)(p->p))->arg, o);
+			fprintf(o, ")");
 			break;
 		case AST_OP :
 			fprintf(o, "(");
@@ -70,6 +72,11 @@ void ast_action_show(AST * p, FILE * o)
 			};
 			if(ldn != NULL)
 				fprintf(o, ")");
+			break;
+		case AST_EQL :
+			ast_action_show(((ASTEql *)p->p)->a1, o);
+			fprintf(o, " = ");
+			ast_action_show(((ASTEql *)p->p)->a2, o);
 			break;
 	};
 }

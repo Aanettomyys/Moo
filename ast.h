@@ -8,6 +8,8 @@
 #include <stdio.h>
 #include <mpfr.h>
 
+#define AST_MPFR_PREC 256
+
 typedef enum
 {
 	AST_ACTN_SHOW,
@@ -154,12 +156,14 @@ ASTStack *	ast_s_new();
 AST *		ast_s_pop(ASTStack * s);
 void		ast_s_push(ASTStack * s, AST * a);
 
-AST * 	ast_numeric_new(const char * str);
-AST * 	ast_op_new(ASTOpType t, AST * l, AST * r);
-AST * 	ast_var_new(char * name);
-AST *	ast_var_new_with_ldn(char * name, LDepNames * ldn);
-AST *	ast_bif1_new(ASTBIFType1 t);
+/**
+ * ast_new(AST_NUMERIC, const char * s);
+ * ast_new(AST_OP, ASTOpType t, AST * l, AST * r);
+ * ast_new(AST_VAR, char * name, NULL | LDepNames * ldn);
+ * ast_new(AST_BIF1, ASTBIFType1 t);
+ * ast_new(AST_EQL, AST * a1, AST * a2);
+ */
+AST * 	ast_new(ASTClass klass, ...);
 AST *	ast_bif1_set_arg(AST * a, AST * arg);
-AST *	ast_eql_new(AST * a1, AST * a2);
 
 #endif // __AST_H__

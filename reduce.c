@@ -77,7 +77,7 @@ void ast_action_reduce(AST * a)
 				ASTBIF1 * bif = a->p;
 				if(bif->arg->klass != AST_NUMERIC) break;
 				ASTNumeric * ai = malloc(sizeof(ASTNumeric));
-				mpfr_init2(ai->v, 128);
+				mpfr_init2(ai->v, AST_MPFR_PREC);
 				ASTNumeric * arg = bif->arg->p;
 				switch(bif->type)
 				{

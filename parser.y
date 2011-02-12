@@ -65,22 +65,22 @@ expression:	EXPR_BEG expr_eq EXPR_END { $<ast>$ = $<ast>2; }
 	|	EXPR_BEG expr EXPR_END { $<ast>$ = $<ast>2; }
 	;
 
-expr_eq:	expr EXPR_EQL expr { $<ast>$ = ast_eql_new($<ast>1, $<ast>3); }
+expr_eq:	expr EXPR_EQL expr { $<ast>$ = ast_new(AST_EQL, $<ast>1, $<ast>3); }
 	;
 
-expr:		expr EXPR_ADD expr { $<ast>$ = ast_op_new(AST_OP_ADD, $<ast>1, $<ast>3); }
-	|	expr EXPR_SUB expr { $<ast>$ = ast_op_new(AST_OP_SUB, $<ast>1, $<ast>3); }
-	|	expr EXPR_MUL expr { $<ast>$ = ast_op_new(AST_OP_MUL, $<ast>1, $<ast>3); }
-	|	expr EXPR_DIV expr { $<ast>$ = ast_op_new(AST_OP_DIV, $<ast>1, $<ast>3); }
+expr:		expr EXPR_ADD expr { $<ast>$ = ast_new(AST_OP, AST_OP_ADD, $<ast>1, $<ast>3); }
+	|	expr EXPR_SUB expr { $<ast>$ = ast_new(AST_OP, AST_OP_SUB, $<ast>1, $<ast>3); }
+	|	expr EXPR_MUL expr { $<ast>$ = ast_new(AST_OP, AST_OP_MUL, $<ast>1, $<ast>3); }
+	|	expr EXPR_DIV expr { $<ast>$ = ast_new(AST_OP, AST_OP_DIV, $<ast>1, $<ast>3); }
 	|	EXPR_LBR expr EXPR_RBR { $<ast>$ = $<ast>2; }
-	|	expr EXPR_POW expr { $<ast>$ = ast_op_new(AST_OP_POW, $<ast>1, $<ast>3); }
+	|	expr EXPR_POW expr { $<ast>$ = ast_new(AST_OP, AST_OP_POW, $<ast>1, $<ast>3); }
 	|	var { $<ast>$ = $<ast>1; }
 	|	EXPR_NUM { $<ast>$ = $<ast>1; }
 	|	EXPR_BIF1 EXPR_LBR expr EXPR_RBR { $<ast>$ = ast_bif1_set_arg($<ast>1, $<ast>3); }
 	;
 
-var:		EXPR_VAR EXPR_LBR var_depends EXPR_RBR { $<ast>$ = ast_var_new_with_ldn($<word>1, $<ldn>3); }
-	|	EXPR_VAR { $<ast>$ = ast_var_new($<word>1); }
+var:		EXPR_VAR EXPR_LBR var_depends EXPR_RBR { $<ast>$ = ast_new(AST_VAR, $<word>1, $<ldn>3); }
+	|	EXPR_VAR { $<ast>$ = ast_new(AST_VAR, $<word>1, NULL); }
 	;
 
 var_depends:	EXPR_VAR { $<ldn>$ = ast_l_ldn_new($<word>1); }

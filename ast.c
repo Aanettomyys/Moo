@@ -1,74 +1,63 @@
+#include <stdarg.h>
 #include "ast.h"
 
-AST * ast_numeric_new(const char * str)
+#include <mpfr.h>
+
+AST * ast_new(ASTClass klass, ...)
 {
 	AST * a = malloc(sizeof(AST));
-	ASTNumeric * p = malloc(sizeof(ASTNumeric));
-	a->klass = AST_NUMERIC;
-	a->p = p;
-	mpfr_init_set_str(p->v, str, 10, GMP_RNDZ);
+	a->klass = klass;
+	va_list va;
+	va_start(va, klass);
+	switch(klass)
+	{
+		case AST_NUMERIC :
+		{
+			ASTNumeric * p = malloc(sizeof(ASTNumeric));
+			mpfr_init2(p->v, AST_MPFR_PREC);
+			mpfr_set_str(p->v, va_arg(va, char *), 10, GMP_RNDZ);
+			a->p = p;
+		}; break;
+		case AST_BIF1 :
+		{
+			ASTBIF1 * p = malloc(sizeof(ASTBIF1));
+			p->type = va_arg(va, ASTBIFType1);
+			p->arg = NULL;
+			a->p = p;
+		}; break;
+		case AST_VAR :
+		{
+			ASTVar * p = malloc(sizeof(ASTVar));
+			p->name = va_arg(va, char *);
+			p->ldn = va_arg(va, LDepNames *);
+			a->p = p;
+		}; break;
+		case AST_OP :
+		{
+			ASTOp * p = malloc(sizeof(ASTOp));
+			p->type = va_arg(va, ASTOpType);
+			p->left = va_arg(va, AST *);
+			p->right = va_arg(va, AST *);
+			a->p = p;
+		}; break;
+		case AST_EQL :
+		{
+			ASTEql * p = malloc(sizeof(ASTEql));
+			p->a1 = va_arg(va, AST *);
+			p->a2 = va_arg(va, AST *);
+			a->p = p;
+		}; break;
+		default : /* cannot reach here */ break;
+	};
+	va_end(va);
 	return a;
 }
 
-AST * ast_bif1_new(ASTBIFType1 t)
-{
-	AST * a = malloc(sizeof(AST));
-	ASTBIF1 * p = malloc(sizeof(ASTBIF1));
-	a->klass = AST_BIF1;
-	a->p = p;
-	p->type = t;
-	p->arg = NULL;
-	return a;
-}
+
  AST * ast_bif1_set_arg(AST * a, AST * arg)
  {
 	 ASTBIF1 * p = (ASTBIF1*) (a->p);
 	 p->arg = arg;
 	 return a;
  }
-
- AST * ast_var_new(char * name)
-{
-	AST * a = malloc(sizeof(AST)); 
-	ASTVar * p = malloc(sizeof(ASTVar));
-	a->klass = AST_VAR;
-	a->p = p;
-	p->ldn = NULL;
-	p->name = name;
-	return a;
-}
-
-AST * ast_var_new_with_ldn(char * name, LDepNames * ldn)
-{
-	AST * a = malloc(sizeof(AST)); 
-	ASTVar * p = malloc(sizeof(ASTVar));
-	a->klass = AST_VAR;
-	a->p = p;
-	p->ldn = ldn;
-	p->name = name;
-	return a;
-}
-
-AST * ast_op_new(ASTOpType t, AST * l, AST * r)
-{
-	AST * a = malloc(sizeof(AST));
-	ASTOp * p = malloc(sizeof(ASTOp));
-	a->klass = AST_OP;
-	a->p = p;
-	p->left = l;
-	p->right = r;
-	p->type = t;
-	return a;
-}
-
-AST * ast_eql_new(AST * a1, AST * a2)
-{
-	AST * a = malloc(sizeof(AST));
-	ASTEql * p = malloc(sizeof(ASTEql));
-	p->a1 = a1;
-	p->a2 = a2;
-	a->klass = AST_EQL;
-	a->p = p;
-	return a;
-}
 
