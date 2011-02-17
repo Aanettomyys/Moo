@@ -15,12 +15,20 @@
 
 %token ENTRY TEXT
 %token ACTN_BEGIN ACTN_ACTION ACTN_SEP ACTN_END
-%token PRMS_BEG PRMS_SEP PRMS_SET PRMS_PRM PRMS_INT PRMS_END
+%token PRMS_BEG PRMS_SEP PRMS_SET PRMS_VAL PRMS_END
 %token EXPR_BEG EXPR_END EXPR_LBR EXPR_RBR EXPR_SEP
+
+/*
+	Availabel parametrs
+*/
+%token P_PRECISION
+
 
 %left EXPR_EQL
 %left EXPR_ADD EXPR_SUB
+%left EXPR_DIF
 %left EXPR_MUL EXPR_DIV
+%left NEGATE
 %right EXPR_POW
 
 %token EXPR_BIF1
@@ -47,19 +55,16 @@ parsable:	ENTRY actions params expression
 	;
 actions:	ACTN_BEGIN action_list ACTN_END { $<lasta>$ = $<lasta>2; }
 	;
-action_list:	{ $<lasta>$ = NULL; }
-	|	ACTN_ACTION { $<lasta>$ = ast_l_lasta_new($<asta>1); }
+action_list:	ACTN_ACTION { $<lasta>$ = ast_l_lasta_new($<asta>1); }
 	|	ACTN_ACTION ACTN_SEP action_list { $<lasta>$ = ast_l_lasta_append($<lasta>3, $<asta>1); } 
 	;
-params:		PRMS_BEG param_list PRMS_END
+params:		/* empty */
+	|	PRMS_BEG param_list PRMS_END
 	;
-param_list:	/* Empty */
+param_list:	/* empty */
 	|	param PRMS_SEP param_list
-	|	param
 	;
-param:		PRMS_PRM PRMS_SET param_right
-	;
-param_right:	PRMS_INT
+param:		P_PRECISION PRMS_VAL
 	;
 expression:	EXPR_BEG expr_eq EXPR_END { $<ast>$ = $<ast>2; }
 	|	EXPR_BEG expr EXPR_END { $<ast>$ = $<ast>2; }
@@ -72,6 +77,7 @@ expr:		expr EXPR_ADD expr { $<ast>$ = ast_new(AST_OP, AST_OP_ADD, $<ast>1, $<ast
 	|	expr EXPR_SUB expr { $<ast>$ = ast_new(AST_OP, AST_OP_SUB, $<ast>1, $<ast>3); }
 	|	expr EXPR_MUL expr { $<ast>$ = ast_new(AST_OP, AST_OP_MUL, $<ast>1, $<ast>3); }
 	|	expr EXPR_DIV expr { $<ast>$ = ast_new(AST_OP, AST_OP_DIV, $<ast>1, $<ast>3); }
+	|	EXPR_SUB expr %prec NEGATE { $<ast>2->negate = true; $<ast>$ = $<ast>2; }
 	|	EXPR_LBR expr EXPR_RBR { $<ast>$ = $<ast>2; }
 	|	expr EXPR_POW expr { $<ast>$ = ast_new(AST_OP, AST_OP_POW, $<ast>1, $<ast>3); }
 	|	var { $<ast>$ = $<ast>1; }
@@ -83,7 +89,7 @@ var:		EXPR_VAR EXPR_LBR var_depends EXPR_RBR { $<ast>$ = ast_new(AST_VAR, $<word
 	|	EXPR_VAR { $<ast>$ = ast_new(AST_VAR, $<word>1, NULL); }
 	;
 
-var_depends:	EXPR_VAR { $<ldn>$ = ast_l_ldn_new($<word>1); }
-	|	EXPR_VAR EXPR_SEP var_depends { $<ldn>$ = ast_l_ldn_append($<ldn>3, $<word>1); }
+var_depends:	EXPR_VAR { $<ldn>$ = u_strings_new($<word>1); }
+	|	EXPR_VAR EXPR_SEP var_depends { $<ldn>$ = u_strings_append($<ldn>3, $<word>1); }
 	;
 %%

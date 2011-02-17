@@ -1,5 +1,22 @@
 #include "ast.h"
 
+Strings * u_strings_new(char * s)
+{
+	Strings * ss = malloc(sizeof(Strings));
+	ss->size = 1;
+	ss->ss = malloc(sizeof(char *));
+	ss->ss[0] = s;
+	return ss;
+}
+
+Strings * u_strings_append(Strings * ss, char * s)
+{
+	ss->size++;
+	ss->ss = realloc(ss->ss, ss->size * sizeof(char *));
+	ss->ss[ss->size - 1] = s;
+	return ss;
+}
+
 ASTQueue * ast_q_new()
 {
 	ASTQueue * q = malloc(sizeof(ASTQueue));
@@ -99,4 +116,22 @@ ParserRList * parser_l_push_back(ParserRList * prl, bool is_ast, ...)
 	}
 	va_end(ap);
 	return nprl;
+}
+
+
+LASTActions * ast_l_lasta_new(ASTAction a1)
+{
+	LASTActions * lasta = malloc(sizeof(LASTActions));
+	lasta->size = 1;
+	lasta->actions = malloc(sizeof(ASTAction));
+	lasta->actions[0] = a1;
+	return lasta;
+}
+
+LASTActions * ast_l_lasta_append(LASTActions * lasta, ASTAction an)
+{
+	lasta->size++;
+	lasta->actions = realloc(lasta->actions, lasta->size * sizeof(ASTAction));
+	lasta->actions[lasta->size - 1] = an;
+	return lasta;
 }

@@ -16,7 +16,7 @@
 WS	[ \n\r\t]*
 WORD	[a-zA-Z]+
 INT	[0-9]+
-NUM	[0-9]+
+NUM	([0-9]+)(("."([0-9]*))?)
 
 %%
 
@@ -44,8 +44,8 @@ NUM	[0-9]+
 	","		return PRMS_SEP;
 	"]"		BEGIN(common); return PRMS_END;
 	"="		return PRMS_SET;
-	{WORD}		return PRMS_PRM;
-	{INT}		return PRMS_INT;
+	outPrec		return P_PRECISION;
+	{INT}		return PRMS_VAL;
 	.		{ yyerror(yytext); }
 }
 <expression>{

@@ -1,44 +1,21 @@
-CFLAGS= -Wall -std=gnu99 -g -Wextra -W
-CC=gcc
-OBJS=lexer.o parser.tab.o show.o lists.o \
-	main.o ast.o utils.o reduce.o worker.o
-LDFLAGS=-lmpfr -lgmp
+CFLAGS	= -Wall -std=gnu99 -g -Wextra -W
+SOURCES	=lexer.c parser.c show.c main.c ast.c utils.c reduce.c worker.c
+OBJECTS	= $(SOURCES:.c=.o)
+LDFLAGS	= -lmpfr -lgmp
 
-all: $(OBJS)
-	$(CC) -o test $(OBJS) $(LDFLAGS)
+.PHONY: all clean
 
-worker.o:
-	$(CC) -c worker.c $(CFLAGS)
+all: moo
 
-utils.o:
-	$(CC) -c utils.c $(CFLAGS)
+moo: $(OBJECTS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
-reduce.o:
-	$(CC) -c reduce.c $(CFLAGS)
-
-lists.o:
-	$(CC) -c lists.c $(CFLAGS)
+$(OBJECTS): parser
 
 parser:
-	bison --defines=parser.h parser.y
+	bison --defines=parser.h -o parser.c parser.y
 	flex --outfile=lexer.c --header-file=lexer.h lexer.l
 
-lexer.o: parser
-	$(CC) -c lexer.c $(CFLAGS)
-
-parser.tab.o:
-	$(CC) -c parser.tab.c $(CFLAGS)
-
-show.o:
-	$(CC) -c show.c $(CFLAGS)
-
-main.o:
-	$(CC) -c main.c $(CFLAGS)
-
-ast.o:
-	$(CC) -c ast.c $(CFLAGS)
 clean:
-	rm -rf *.o parser.h parser.tab.c lexer.h lexer.c test
+	rm -rf $(OBJECTS) parser.h parser.c lexer.h lexer.c moo
 
-test: all
-	./test && echo "Done."

@@ -7,6 +7,8 @@ AST * ast_new(ASTClass klass, ...)
 {
 	AST * a = malloc(sizeof(AST));
 	a->klass = klass;
+	a->diff_by = NULL;
+	a->negate = false;
 	va_list va;
 	va_start(va, klass);
 	switch(klass)
@@ -29,7 +31,7 @@ AST * ast_new(ASTClass klass, ...)
 		{
 			ASTVar * p = malloc(sizeof(ASTVar));
 			p->name = va_arg(va, char *);
-			p->ldn = va_arg(va, LDepNames *);
+			p->ldn = va_arg(va, Strings *);
 			a->p = p;
 		}; break;
 		case AST_OP :

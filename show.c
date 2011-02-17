@@ -6,6 +6,8 @@
 
 void ast_action_show(AST * p, FILE * o)
 {
+	if(p->negate)
+		fprintf(o, "-");
 	switch(p->klass)
 	{
 		case AST_NUMERIC :
@@ -63,12 +65,12 @@ void ast_action_show(AST * p, FILE * o)
 			break;
 		case AST_VAR :
 			fprintf(o, ((ASTVar *)(p->p))->name);
-			LDepNames * ldn = ((ASTVar *)(p->p))->ldn;
+			Strings * ldn = ((ASTVar *)(p->p))->ldn;
 			if(ldn != NULL)
 				fprintf(o, "(");
 			for(size_t it = 0; it < ldn->size; it++)
 			{
-				fprintf(o, "%s", ldn->names[it]);
+				fprintf(o, "%s", ldn->ss[it]);
 			};
 			if(ldn != NULL)
 				fprintf(o, ")");

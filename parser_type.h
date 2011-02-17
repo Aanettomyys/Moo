@@ -7,7 +7,7 @@ typedef union _ParserType
 {
 	AST * ast;
 	char * word;
-	LDepNames * ldn;
+	Strings * ldn;
 	LASTActions * lasta;
 	ASTAction asta;
 	ParserRList * prl;

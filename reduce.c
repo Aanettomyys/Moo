@@ -106,6 +106,13 @@ void ast_action_reduce(AST * a)
 				free(bif);
 				a->p = ai;
 			}; break;
+			case AST_NUMERIC :
+			{
+				ASTNumeric * num = a->p;
+				if(a->negate)
+					mpfr_neg(num->v, num->v, GMP_RNDZ);
+				a->negate = false;
+			}; break;
 			default : break;
 		}
 	};

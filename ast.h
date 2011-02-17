@@ -10,6 +10,12 @@
 
 #define AST_MPFR_PREC 256
 
+typedef struct
+{
+	size_t size;
+	char ** ss;
+} Strings;
+
 typedef enum
 {
 	AST_ACTN_SHOW,
@@ -57,12 +63,6 @@ typedef enum
 	AST_VAR
 } ASTClass;
 
-typedef struct 
-{
-	size_t size;
-	char ** names;
-} LDepNames;
-
 typedef struct
 {
 	size_t size;
@@ -72,6 +72,8 @@ typedef struct
 typedef struct
 {
 	ASTClass klass;
+	bool negate;
+	Strings * diff_by;
 	void * p;
 } AST;
 
@@ -96,7 +98,7 @@ typedef struct
 typedef struct
 {
 	char * name;
-	LDepNames * ldn;
+	Strings * ldn;
 } ASTVar;
 
 typedef struct
@@ -144,8 +146,8 @@ typedef struct _ParserRList
  */
 ParserRList *	parser_l_push_back(ParserRList * prl, bool is_ast, ...);
 
-LDepNames *	ast_l_ldn_new(char * n1);
-LDepNames *	ast_l_ldn_append(LDepNames * ldn, char * nn);
+Strings *	u_strings_new(char * s);
+Strings *	u_strings_append(Strings * ss, char * s);
 LASTActions *	ast_l_lasta_new(ASTAction a1);
 LASTActions *	ast_l_lasta_append(LASTActions * lasta, ASTAction an);
 
@@ -159,7 +161,7 @@ void		ast_s_push(ASTStack * s, AST * a);
 /**
  * ast_new(AST_NUMERIC, const char * s);
  * ast_new(AST_OP, ASTOpType t, AST * l, AST * r);
- * ast_new(AST_VAR, char * name, NULL | LDepNames * ldn);
+ * ast_new(AST_VAR, char * name, NULL | Strings * ldn);
  * ast_new(AST_BIF1, ASTBIFType1 t);
  * ast_new(AST_EQL, AST * a1, AST * a2);
  */
