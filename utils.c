@@ -91,9 +91,9 @@ ParserRList * parser_l_push_back(ParserRList * prl, bool is_ast, ...)
 	if(is_ast)
 	{
 		AST * ast = va_arg(ap, AST *);
-		LASTActions * lasta = va_arg(ap, LASTActions *);
+		ASTActions actn = va_arg(ap, ASTActions);
 		nprl->p.a.ast = ast;
-		nprl->p.a.lasta = lasta;
+		nprl->p.a.actn = actn;
 	}
 	else
 	{
@@ -116,22 +116,4 @@ ParserRList * parser_l_push_back(ParserRList * prl, bool is_ast, ...)
 	}
 	va_end(ap);
 	return nprl;
-}
-
-
-LASTActions * ast_l_lasta_new(ASTAction a1)
-{
-	LASTActions * lasta = malloc(sizeof(LASTActions));
-	lasta->size = 1;
-	lasta->actions = malloc(sizeof(ASTAction));
-	lasta->actions[0] = a1;
-	return lasta;
-}
-
-LASTActions * ast_l_lasta_append(LASTActions * lasta, ASTAction an)
-{
-	lasta->size++;
-	lasta->actions = realloc(lasta->actions, lasta->size * sizeof(ASTAction));
-	lasta->actions[lasta->size - 1] = an;
-	return lasta;
 }

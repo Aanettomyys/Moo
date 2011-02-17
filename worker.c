@@ -30,19 +30,11 @@ void worker_flush(Worker * w, FILE * out)
 	{
 		if(it->is_ast)
 		{
-			LASTActions * lasta = it->p.a.lasta;
-			for(size_t i = 0; i < lasta->size; ++i)
-			{
-				switch(lasta->actions[i])
-				{
-					case AST_ACTN_SHOW :
-						ast_action_show(it->p.a.ast, out);
-						break;
-					case AST_ACTN_REDUCE :
-						ast_action_reduce(it->p.a.ast);
-						break;
-				}
-			}
+			ASTActions actn = it->p.a.actn;
+			if(actn & AST_REDUCE)
+				ast_action_reduce(it->p.a.ast);
+			if(actn & AST_SHOW)
+				ast_action_show(it->p.a.ast, out);
 		}
 		else
 		{

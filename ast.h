@@ -18,9 +18,9 @@ typedef struct
 
 typedef enum
 {
-	AST_ACTN_SHOW,
-	AST_ACTN_REDUCE
-} ASTAction;
+	AST_SHOW = 1,
+	AST_REDUCE = 2
+} ASTActions;
 
 typedef enum
 {
@@ -62,12 +62,6 @@ typedef enum
 	AST_OP,
 	AST_VAR
 } ASTClass;
-
-typedef struct
-{
-	size_t size;
-	ASTAction * actions;
-} LASTActions;
 
 typedef struct
 {
@@ -134,7 +128,7 @@ typedef struct _ParserRList
 		struct
 		{
 			AST * ast;
-			LASTActions * lasta;
+			ASTActions actn;
 		} a;
 	} p;
 	struct _ParserRList * next;
@@ -142,14 +136,12 @@ typedef struct _ParserRList
 
 /**
  * parser_l_push_back(prl, is_ast, char c);
- * parser_l_push_back(prl, is_ast, AST * a, LASTActions * lasta);
+ * parser_l_push_back(prl, is_ast, AST * a, ASTActions * actn);
  */
 ParserRList *	parser_l_push_back(ParserRList * prl, bool is_ast, ...);
 
 Strings *	u_strings_new(char * s);
 Strings *	u_strings_append(Strings * ss, char * s);
-LASTActions *	ast_l_lasta_new(ASTAction a1);
-LASTActions *	ast_l_lasta_append(LASTActions * lasta, ASTAction an);
 
 ASTQueue * 	ast_q_new();
 AST *		ast_q_pop(ASTQueue * q);

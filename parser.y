@@ -23,7 +23,6 @@
 */
 %token P_PRECISION
 
-
 %left EXPR_EQL
 %left EXPR_ADD EXPR_SUB
 %left EXPR_DIF
@@ -50,13 +49,18 @@ all:		/* empty */
 	;
 parsable:	ENTRY actions params expression 
 		{ 
-			$<prl>$ = parser_l_push_back(NULL, true, $<ast>4, $<lasta>2);
+			$<prl>$ = parser_l_push_back(NULL, true, $<ast>4, $<actn>2);
 		}
 	;
-actions:	ACTN_BEGIN action_list ACTN_END { $<lasta>$ = $<lasta>2; }
+actions:	ACTN_BEGIN action_list ACTN_END { $<actn>$ = $<actn>2; }
 	;
-action_list:	ACTN_ACTION { $<lasta>$ = ast_l_lasta_new($<asta>1); }
-	|	ACTN_ACTION ACTN_SEP action_list { $<lasta>$ = ast_l_lasta_append($<lasta>3, $<asta>1); } 
+action_list:	ACTN_ACTION { $<actn>$ = $<actn>1; }
+	|	ACTN_ACTION ACTN_SEP action_list 
+		{
+			if($<actn>3 & $<actn>1)
+				yyerror("Duplicate actions.");
+			$<actn>$ = ($<actn>3 | $<actn>1); 
+		} 
 	;
 params:		/* empty */
 	|	PRMS_BEG param_list PRMS_END

@@ -35,8 +35,8 @@ NUM	([0-9]+)(("."([0-9]*))?)
 	{WS}		/* eat */
 	">"		BEGIN(common); return ACTN_END;
 	","		return ACTN_SEP;
-	"show"		yylval->asta = AST_ACTN_SHOW; return ACTN_ACTION;
-	"reduce"	yylval->asta = AST_ACTN_REDUCE; return ACTN_ACTION;
+	"show"		yylval->actn = AST_SHOW; return ACTN_ACTION;
+	"reduce"	yylval->actn = AST_REDUCE; return ACTN_ACTION;
 	.		{ yyerror(yytext); }
 }
 <params>{

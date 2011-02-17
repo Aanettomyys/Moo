@@ -8,8 +8,7 @@ typedef union _ParserType
 	AST * ast;
 	char * word;
 	Strings * ldn;
-	LASTActions * lasta;
-	ASTAction asta;
+	ASTActions actn;
 	ParserRList * prl;
 } ParserType;
 
