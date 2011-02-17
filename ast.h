@@ -101,24 +101,6 @@ typedef struct
 	AST * a2;
 } ASTEql;
 
-typedef struct _ASTNode
-{
-	AST * ast;
-	struct _ASTNode * next;
-	
-} ASTNode;
-
-typedef struct
-{
-	ASTNode * head;
-	ASTNode * tail;
-} ASTQueue;
-
-typedef struct _ASTStack
-{
-	ASTNode * head;
-} ASTStack;
-
 typedef struct _ParserRList
 {
 	bool is_ast;
@@ -136,19 +118,12 @@ typedef struct _ParserRList
 
 /**
  * parser_l_push_back(prl, is_ast, char c);
- * parser_l_push_back(prl, is_ast, AST * a, ASTActions * actn);
+ * parser_l_push_back(prl, is_ast, AST * a, ASTActions actn);
  */
 ParserRList *	parser_l_push_back(ParserRList * prl, bool is_ast, ...);
 
 Strings *	u_strings_new(char * s);
 Strings *	u_strings_append(Strings * ss, char * s);
-
-ASTQueue * 	ast_q_new();
-AST *		ast_q_pop(ASTQueue * q);
-void		ast_q_push(ASTQueue * q, AST * a);
-ASTStack *	ast_s_new();
-AST *		ast_s_pop(ASTStack * s);
-void		ast_s_push(ASTStack * s, AST * a);
 
 /**
  * ast_new(AST_NUMERIC, const char * s);

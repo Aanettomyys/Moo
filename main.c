@@ -11,14 +11,17 @@ const char * pname;
 const struct option lo[] = {
 	{ "help",	0, NULL, 'h' },
 	{ "output",	1, NULL, 'o' },
+	{ "input",	1, NULL, 'i' },
 	{ NULL,		0, NULL, 0 }
 };
-const char * so = "ho";
+
+const char * so = "hoi";
 
 void usage(FILE * o, int ec)
 {
-	fprintf(o, "Usage: %s options inputfile\n", pname);
+	fprintf(o, "Usage: %s options\n", pname);
 	fprintf(o,
+		" -i --input <filename>  Read input from file.\n"
 		" -o --output <filename> Write output to file.\n"
 		" -h --help              Print this usage.\n");
 	exit(ec);
@@ -26,7 +29,7 @@ void usage(FILE * o, int ec)
 
 int main(int argc, char ** argv)
 {
-	FILE * in = NULL;
+	FILE * in = stdin;
 	FILE * out = stdout;
 	pname = argv[0];
 	int nextop;
@@ -38,8 +41,19 @@ int main(int argc, char ** argv)
 			case 'h' :
 				usage(stdout, 0);
 				break;
+			case 'i' :
+				in = fopen(optarg, "r");
+				if(in == NULL)
+				{
+					yyerror("Cannot open input file.");
+				}
+				break;
 			case 'o' :
 				out = fopen(optarg, "w");
+				if(out == NULL)
+				{
+					yyerror("Cannot open output file.");
+				}
 				break;
 			case -1 :
 				break;
@@ -48,9 +62,6 @@ int main(int argc, char ** argv)
 				break;
 		}
 	} while(nextop != -1);
-	if(optind >= argc)
-		usage(stderr, -1);
-	in = fopen(argv[optind], "r");
 	Worker w;
 	worker_init(&w, in);
 	worker_run(&w);

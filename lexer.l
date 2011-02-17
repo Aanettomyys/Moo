@@ -8,7 +8,7 @@
 
 %}
 
-%option noyywrap reentrant never-interactive nounistd
+%option noyywrap reentrant
 %option bison-bridge
 
 %x common params expression actions
@@ -21,7 +21,7 @@ NUM	([0-9]+)(("."([0-9]*))?)
 %%
 
 <INITIAL>{
-	"%%"		BEGIN(common); return ENTRY;
+	"@@"		BEGIN(common); return ENTRY;
 	.|\n		yylval->word = strdup(yytext); return TEXT;
 }
 <common>{
@@ -84,10 +84,3 @@ NUM	([0-9]+)(("."([0-9]*))?)
 }
 
 %%
-
-int yyerror(const char * msg)
-{
-	fprintf(stderr, "Error: %s\n", msg);
-	exit(-1);
-	return 0;
-}

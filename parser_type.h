@@ -12,6 +12,8 @@ typedef union _ParserType
 	ParserRList * prl;
 } ParserType;
 
+int yyerror(const char * msg);
+
 #define YYSTYPE ParserType
 
 #endif // __PARSER_TYPE_H__

@@ -1,4 +1,13 @@
 #include "ast.h"
+#include "utils.h"
+#include "parser_type.h"
+
+int yyerror(const char * msg)
+{
+	fprintf(stderr, "Error: %s\n", msg);
+	exit(-1);
+	return 0;
+}
 
 Strings * u_strings_new(char * s)
 {
@@ -17,18 +26,18 @@ Strings * u_strings_append(Strings * ss, char * s)
 	return ss;
 }
 
-ASTQueue * ast_q_new()
+Queue * u_q_new()
 {
-	ASTQueue * q = malloc(sizeof(ASTQueue));
+	Queue * q = malloc(sizeof(Queue));
 	q->head = NULL;
 	q->tail = NULL;
 	return q;
 }
 
-void ast_q_push(ASTQueue * q, AST * a)
+void u_q_push(Queue * q, void * p)
 {
-	ASTNode * qn = malloc(sizeof(ASTNode));
-	qn->ast = a;
+	Node * qn = malloc(sizeof(Node));
+	qn->p = p;
 	qn->next = NULL;
 	if(q->head == NULL)
 	{
@@ -45,39 +54,39 @@ void ast_q_push(ASTQueue * q, AST * a)
 	}
 }
 
-AST * ast_q_pop(ASTQueue * q)
+void * u_q_pop(Queue * q)
 {
-	ASTNode * qn = q->head;
+	Node * qn = q->head;
 	q->head = qn->next;
 	if(qn->next == NULL)
 		q->tail = NULL;
-	AST * a = qn->ast;
+	void * p = qn->p;
 	free(qn);
-	return a;
+	return p;
 }
 
-ASTStack * ast_s_new()
+Stack * u_s_new()
 {
-	ASTStack * s = malloc(sizeof(ASTStack));
+	Stack * s = malloc(sizeof(Stack));
 	s->head = NULL;
 	return s;
 }
 
-void ast_s_push(ASTStack * s, AST * a)
+void u_s_push(Stack * s, void * p)
 {
-	ASTNode * sn = malloc(sizeof(ASTNode));
-	sn->ast = a;
+	Node * sn = malloc(sizeof(Node));
+	sn->p = p;
 	sn->next = s->head;
 	s->head = sn;
 }
 
-AST * ast_s_pop(ASTStack * s)
+void * u_s_pop(Stack * s)
 {
-	ASTNode * sn = s->head;
+	Node * sn = s->head;
 	s->head = sn->next;
-	AST * a = sn->ast;
+	void * p = sn->p;
 	free(sn);
-	return a;
+	return p;
 }
 
 
