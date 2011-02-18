@@ -1,12 +1,13 @@
 #include "ast.h"
 #include "utils.h"
-#include "parser_type.h"
+#include <stdarg.h>
 
-int yyerror(const char * msg)
+int yyerror(char *s, ...)
 {
-	fprintf(stderr, "Error: %s\n", msg);
+	va_list ap;
+	va_start(ap, s);
+	vfprintf(stderr, s, ap);
 	exit(-1);
-	return 0;
 }
 
 Strings * u_strings_new(char * s)

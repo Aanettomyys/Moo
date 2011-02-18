@@ -3,7 +3,6 @@
 
 #include "parser_param.h"
 #include "parser.h"
-#include "lexer.h"
 #include "actions.h"
 #include "worker.h"
 

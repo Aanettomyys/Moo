@@ -2,14 +2,19 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "parser_type.h"
 #include "parser.h"
+#include "parser_param.h"
 #include "ast.h"
+#include "utils.h"
+
+#define YY_USER_ACTION yylloc->first_line = yylloc->last_line = yylineno; \
+	yylloc->first_column = yycolumn; yylloc->last_column = yycolumn+yyleng-1; \
+	yycolumn += yyleng;
 
 %}
 
-%option noyywrap reentrant
-%option bison-bridge
+%option noyywrap reentrant yylineno
+%option bison-bridge bison-locations
 
 %x common params expression actions
 
@@ -29,7 +34,12 @@ NUM	([0-9]+)(("."([0-9]*))?)
 	"<"		BEGIN(actions); return ACTN_BEGIN;
 	"["		BEGIN(params); return PRMS_BEG;
 	"{"		BEGIN(expression); return EXPR_BEG;
-	.		{ yyerror(yytext); }
+	.		{ yyerror("Error at %d:%d - %d:%d: Misterios character `%c'.\n", 
+				yylloc->first_line,
+				yylloc->first_column,
+				yylloc->last_line,
+				yylloc->last_column,
+				yytext[0]); }
 }
 <actions>{
 	{WS}		/* eat */
@@ -37,7 +47,7 @@ NUM	([0-9]+)(("."([0-9]*))?)
 	","		return ACTN_SEP;
 	"show"		yylval->actn = AST_SHOW; return ACTN_ACTION;
 	"reduce"	yylval->actn = AST_REDUCE; return ACTN_ACTION;
-	.		{ yyerror(yytext); }
+	.		{  }
 }
 <params>{
 	{WS}		/* eat */
@@ -46,7 +56,7 @@ NUM	([0-9]+)(("."([0-9]*))?)
 	"="		return PRMS_SET;
 	outPrec		return P_PRECISION;
 	{INT}		return PRMS_VAL;
-	.		{ yyerror(yytext); }
+	.		{ }
 }
 <expression>{
 	{WS}		/* eat */
@@ -80,7 +90,7 @@ NUM	([0-9]+)(("."([0-9]*))?)
 	"="		return EXPR_EQL;
 	","		return EXPR_SEP;
 	{WORD}		yylval->word = strdup(yytext); return EXPR_VAR;
-	.		{ yyerror(yytext); }
+	.		{  }
 }
 
 %%

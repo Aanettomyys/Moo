@@ -5,13 +5,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "parser_param.h"
-#include "parser_type.h"
 #include "ast.h"
 #include "actions.h"
+#include "utils.h"
 
 %}
 
-%define api.pure
+%locations
+%pure_parser
 
 %token ENTRY TEXT
 %token ACTN_BEGIN ACTN_ACTION ACTN_SEP ACTN_END

@@ -1,20 +1,24 @@
 #ifndef __PARSER_PARAM_H__
 #define __PARSER_PARAM_H__
 
-#ifndef YY_NO_UNISTD_H
-#define YY_NO_UNISTD_H 1
-#endif // YY_NO_UNISTD_H
-
-
-#include "parser_type.h"
 #include "ast.h"
-#include "lexer.h"
 
-typedef struct _ParserParam
+typedef struct
 {
-	yyscan_t scanner;
+	void * scanner;
 	ParserRList * head;
 } ParserParam;
+
+typedef union
+{
+	AST * ast;
+	char * word;
+	Strings * ldn;
+	ASTActions actn;
+	ParserRList * prl;
+} ParserType;
+ 
+#define YYSTYPE ParserType
 
 #define YYPARSE_PARAM data
 #define YYLEX_PARAM ((ParserParam *)data)->scanner
