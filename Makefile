@@ -14,7 +14,7 @@ $(OBJECTS): parser
 
 parser:
 	bison --defines=parser.h -o parser.c parser.y
-	flex --outfile=lexer.c lexer.l
+	flex lexer.l
 
 clean:
 	rm -rf $(OBJECTS) parser.h parser.c lexer.h lexer.c moo

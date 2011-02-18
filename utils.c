@@ -6,8 +6,9 @@ int yyerror(char *s, ...)
 {
 	va_list ap;
 	va_start(ap, s);
+	fprintf(stderr, "Error: ");
 	vfprintf(stderr, s, ap);
-	exit(-1);
+	fprintf(stderr, "\n");
 }
 
 Strings * u_strings_new(char * s)

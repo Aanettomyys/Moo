@@ -15,7 +15,7 @@
 
 %option noyywrap reentrant yylineno
 %option bison-bridge bison-locations
-
+%option outfile="lexer.c"
 %x common params expression actions
 
 WS	[ \n\r\t]*
@@ -34,12 +34,12 @@ NUM	([0-9]+)(("."([0-9]*))?)
 	"<"		BEGIN(actions); return ACTN_BEGIN;
 	"["		BEGIN(params); return PRMS_BEG;
 	"{"		BEGIN(expression); return EXPR_BEG;
-	.		{ yyerror("Error at %d:%d - %d:%d: Misterios character `%c'.\n", 
+	.		{ yyerror("at %d:%d - %d:%d: Unexpected character `%c'.", 
 				yylloc->first_line,
 				yylloc->first_column,
 				yylloc->last_line,
 				yylloc->last_column,
-				yytext[0]); }
+				yytext[0]); return -1; }
 }
 <actions>{
 	{WS}		/* eat */
@@ -47,7 +47,12 @@ NUM	([0-9]+)(("."([0-9]*))?)
 	","		return ACTN_SEP;
 	"show"		yylval->actn = AST_SHOW; return ACTN_ACTION;
 	"reduce"	yylval->actn = AST_REDUCE; return ACTN_ACTION;
-	.		{  }
+	.		{ yyerror("at %d:%d - %d:%d: Unexpected character `%c'.", 
+				yylloc->first_line,
+				yylloc->first_column,
+				yylloc->last_line,
+				yylloc->last_column,
+				yytext[0]); return -1; }
 }
 <params>{
 	{WS}		/* eat */
@@ -56,7 +61,12 @@ NUM	([0-9]+)(("."([0-9]*))?)
 	"="		return PRMS_SET;
 	outPrec		return P_PRECISION;
 	{INT}		return PRMS_VAL;
-	.		{ }
+	.		{ yyerror("at %d:%d - %d:%d: Unexpected character `%c'.", 
+				yylloc->first_line,
+				yylloc->first_column,
+				yylloc->last_line,
+				yylloc->last_column,
+				yytext[0]); return -1; }
 }
 <expression>{
 	{WS}		/* eat */
@@ -90,7 +100,12 @@ NUM	([0-9]+)(("."([0-9]*))?)
 	"="		return EXPR_EQL;
 	","		return EXPR_SEP;
 	{WORD}		yylval->word = strdup(yytext); return EXPR_VAR;
-	.		{  }
+	.		{ yyerror("at %d:%d - %d:%d: Unexpected character `%c'.", 
+				yylloc->first_line,
+				yylloc->first_column,
+				yylloc->last_line,
+				yylloc->last_column,
+				yytext[0]);  return -1; }
 }
 
 %%

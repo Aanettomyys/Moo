@@ -11,7 +11,7 @@ typedef struct
 } Worker;
 
 void worker_clear(Worker * w);
-void worker_run(Worker * w);
+int worker_run(Worker * w);
 void worker_init(Worker * w, FILE * in);
 void worker_flush(Worker * w, FILE * out);
 
