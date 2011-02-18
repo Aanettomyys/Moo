@@ -32,7 +32,7 @@ static Stack * ast_iterate(AST * a)
 	return s;
 }
 
-void ast_action_reduce(AST * a)
+void ast_action_reduce(AST * a, ActionsParams * ap)
 {
 	Stack * s = ast_iterate(a);
 	while(s->head != NULL)

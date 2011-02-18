@@ -4,7 +4,7 @@
 
 There is simple test @@<show>{ - 1.1 * 3 + 2 }
 
- $$ @@e<show>{ sec(3 + 4) } $$
+ $$ @@<show>[prec=1]{ sec(3 + 4) } $$
 So we do this $ @@<show, reduce>{ sin(1) / cos(1) = tan(1) } $
 end
 \end{document}

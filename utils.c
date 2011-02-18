@@ -1,6 +1,7 @@
 #include "ast.h"
 #include "utils.h"
 #include <stdarg.h>
+#include <strings.h>
 
 int yyerror(char *s, ...)
 {
@@ -9,6 +10,7 @@ int yyerror(char *s, ...)
 	fprintf(stderr, "Error: ");
 	vfprintf(stderr, s, ap);
 	fprintf(stderr, "\n");
+	return -1;
 }
 
 Strings * u_strings_new(char * s)
@@ -103,8 +105,11 @@ ParserRList * parser_l_push_back(ParserRList * prl, bool is_ast, ...)
 	{
 		AST * ast = va_arg(ap, AST *);
 		ASTActions actn = va_arg(ap, ASTActions);
+		ActionsParams * aps = va_arg(ap, ActionsParams *);
 		nprl->p.a.ast = ast;
 		nprl->p.a.actn = actn;
+		nprl->p.a.ap = malloc(sizeof(ActionsParams));
+		memmove(nprl->p.a.ap, aps, sizeof(ActionsParams));
 	}
 	else
 	{

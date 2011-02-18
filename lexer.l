@@ -59,8 +59,8 @@ NUM	([0-9]+)(("."([0-9]*))?)
 	","		return PRMS_SEP;
 	"]"		BEGIN(common); return PRMS_END;
 	"="		return PRMS_SET;
-	outPrec		return P_PRECISION;
-	{INT}		return PRMS_VAL;
+	prec		return P_PRECISION;
+	{INT}		yylval->word = strdup(yytext); return PRMS_VAL;
 	.		{ yyerror("at %d:%d - %d:%d: Unexpected character `%c'.", 
 				yylloc->first_line,
 				yylloc->first_column,

@@ -50,7 +50,8 @@ all:		/* empty */
 	;
 parsable:	ENTRY actions params expression 
 		{ 
-			$<prl>$ = parser_l_push_back(NULL, true, $<ast>4, $<actn>2);
+			$<prl>$ = parser_l_push_back(NULL, true, $<ast>4, $<actn>2, ((ParserParam *)data)->ap);
+			((ParserParam *)data)->ap->precision = DEFAULT_PRECISION;
 		}
 	;
 actions:	ACTN_BEGIN action_list ACTN_END { $<actn>$ = $<actn>2; }
@@ -67,9 +68,25 @@ params:		/* empty */
 	|	PRMS_BEG param_list PRMS_END
 	;
 param_list:	/* empty */
+	|	param
 	|	param PRMS_SEP param_list
 	;
-param:		P_PRECISION PRMS_VAL
+param:		P_PRECISION PRMS_SET PRMS_VAL
+		{
+			int prec =  atoi($<word>3);
+			if(prec <= 0)
+			{
+				yyerror("at %d:%d - %d:%d: Wrong precision `%d'.", 
+					@3.first_line,
+					@3.first_column,
+					@3.last_line,
+					@3.last_column,
+					prec);
+				YYABORT;
+			}
+			((ParserParam *)data)->ap->precision = prec;
+			free($<word>3);
+		}
 	;
 expression:	EXPR_BEG expr_eq EXPR_END { $<ast>$ = $<ast>2; }
 	|	EXPR_BEG expr EXPR_END { $<ast>$ = $<ast>2; }

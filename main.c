@@ -63,7 +63,7 @@ int main(int argc, char ** argv)
 	} while(nextop != -1);
 	Worker w;
 	worker_init(&w, in);
-	if(worker_run(&w))
+	if(!worker_run(&w))
 		worker_flush(&w, out);
 	if(in != stdin)
 		fclose(in);

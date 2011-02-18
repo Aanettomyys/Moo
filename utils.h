@@ -1,6 +1,8 @@
 #ifndef __UTILS_H__
 #define __UTILS_H__
 
+#define DEFAULT_PRECISION 3
+
 typedef struct _Node
 {
 	void * p;

@@ -7,6 +7,7 @@ typedef struct
 {
 	void * scanner;
 	ParserRList * head;
+	ActionsParams * ap;
 } ParserParam;
 
 typedef union

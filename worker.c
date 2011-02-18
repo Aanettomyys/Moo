@@ -1,5 +1,6 @@
 #include "worker.h"
 #include "actions.h"
+#include "utils.h"
 
 int yyparse(void * data);
 
@@ -8,6 +9,8 @@ void worker_init(Worker * w, FILE * in)
 	yylex_init(&w->p.scanner);
 	w->plr = NULL;
 	w->p.head = NULL;
+	w->p.ap = malloc(sizeof(ActionsParams));
+	w->p.ap->precision = DEFAULT_PRECISION;
 	w->fin = in;
 }
 
@@ -34,7 +37,7 @@ int worker_run(Worker * w)
 			ASTActions actn = it->p.a.actn;
 			if(actn & AST_REDUCE)
 			{
-				ast_action_reduce(it->p.a.ast);
+				ast_action_reduce(it->p.a.ast, it->p.a.ap);
 			}
 		}
 		it = it->next;
@@ -51,11 +54,11 @@ void worker_flush(Worker * w, FILE * out)
 		{
 			ASTActions actn = it->p.a.actn;
 			if(actn & AST_SHOW)
-				ast_action_show(it->p.a.ast, out);
+				ast_action_show(it->p.a.ast, it->p.a.ap, out);
 		}
 		else
 		{
-			printf("%s", it->p.s);
+			fprintf(out, "%s", it->p.s);
 		}
 		it = it->next;
 	}

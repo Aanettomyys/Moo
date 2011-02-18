@@ -16,6 +16,11 @@ typedef struct
 	char ** ss;
 } Strings;
 
+typedef struct
+{
+	int precision;
+} ActionsParams;
+
 typedef enum
 {
 	AST_SHOW = 1,
@@ -111,6 +116,7 @@ typedef struct _ParserRList
 		{
 			AST * ast;
 			ASTActions actn;
+			ActionsParams * ap;
 		} a;
 	} p;
 	struct _ParserRList * next;
@@ -118,7 +124,7 @@ typedef struct _ParserRList
 
 /**
  * parser_l_push_back(prl, is_ast, char c);
- * parser_l_push_back(prl, is_ast, AST * a, ASTActions actn);
+ * parser_l_push_back(prl, is_ast, AST * a, ASTActions actn, ActionsParams * ap);
  */
 ParserRList *	parser_l_push_back(ParserRList * prl, bool is_ast, ...);
 
