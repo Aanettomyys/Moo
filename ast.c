@@ -17,7 +17,7 @@ AST * ast_new(ASTClass klass, ...)
 		{
 			ASTNumeric * p = malloc(sizeof(ASTNumeric));
 			mpfr_init2(p->v, AST_MPFR_PREC);
-			mpfr_set_str(p->v, va_arg(va, char *), 10, GMP_RNDZ);
+			mpfr_set_str(p->v, va_arg(va, char *), 10, GMP_RNDN);
 			a->p = p;
 		}; break;
 		case AST_BIF1 :

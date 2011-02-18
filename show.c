@@ -67,13 +67,14 @@ void ast_action_show(AST * p, ActionsParams * ap, FILE * o)
 			fprintf(o, ((ASTVar *)(p->p))->name);
 			Strings * ldn = ((ASTVar *)(p->p))->ldn;
 			if(ldn != NULL)
-				fprintf(o, "(");
-			for(size_t it = 0; it < ldn->size; it++)
 			{
-				fprintf(o, "%s", ldn->ss[it]);
-			};
-			if(ldn != NULL)
+				fprintf(o, "(");
+				for(size_t it = 0; it < ldn->size; it++)
+				{
+					fprintf(o, "%s", ldn->ss[it]);
+				}
 				fprintf(o, ")");
+			}
 			break;
 		case AST_EQL :
 			ast_action_show(((ASTEql *)p->p)->a1, ap, o);
