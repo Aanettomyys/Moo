@@ -1,10 +1,5 @@
 \documentclass{article}
-
 \begin{document}
-
-There is simple test @@<show, reduce> [prec=4]{ - 1.1 * 3 + 2 * x }
-
- $$ @@<show>[prec=1]{ sec(3 + 4) } $$
-So we do this $ @@<show, reduce>{ sin(1) / cos(1) = tan(1) } $
+@@<reduce>{1+2}
 end
 \end{document}

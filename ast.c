@@ -7,7 +7,6 @@ AST * ast_new(ASTClass klass, ...)
 {
 	AST * a = malloc(sizeof(AST));
 	a->klass = klass;
-	a->diff_by = NULL;
 	a->negate = false;
 	va_list va;
 	va_start(va, klass);

@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <mpfr.h>
 
-#define AST_MPFR_PREC 256
+#define AST_MPFR_PREC 32
 
 typedef struct
 {
@@ -72,7 +72,6 @@ typedef struct
 {
 	ASTClass klass;
 	bool negate;
-	Strings * diff_by;
 	void * p;
 } AST;
 
@@ -106,7 +105,7 @@ typedef struct
 	AST * a2;
 } ASTEql;
 
-typedef struct _ParserRList
+typedef struct
 {
 	bool is_ast;
 	union 
@@ -119,14 +118,7 @@ typedef struct _ParserRList
 			ActionsParams * ap;
 		} a;
 	} p;
-	struct _ParserRList * next;
-} ParserRList;
-
-/**
- * parser_l_push_back(prl, is_ast, char c);
- * parser_l_push_back(prl, is_ast, AST * a, ASTActions actn, ActionsParams * ap);
- */
-ParserRList *	parser_l_push_back(ParserRList * prl, bool is_ast, ...);
+} ParserResult;
 
 Strings *	u_strings_new(char * s);
 Strings *	u_strings_append(Strings * ss, char * s);

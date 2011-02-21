@@ -2,11 +2,12 @@
 #define __PARSER_PARAM_H__
 
 #include "ast.h"
+#include "utils.h"
 
 typedef struct
 {
 	void * scanner;
-	ParserRList * head;
+	Queue * q;
 	ActionsParams * ap;
 } ParserParam;
 
@@ -16,7 +17,6 @@ typedef union
 	char * word;
 	Strings * ldn;
 	ASTActions actn;
-	ParserRList * prl;
 } ParserType;
  
 #define YYSTYPE ParserType

@@ -27,7 +27,8 @@ NUM	([0-9]+)(("."([0-9]*))?)
 
 <INITIAL>{
 	"@@"		BEGIN(common); return ENTRY;
-	.|\n		yylval->word = strdup(yytext); return TEXT;
+	([^\@]){1,512}	yylval->word = strdup(yytext); return TEXT;
+	"@"		yylval->word = strdup(yytext); return TEXT;
 }
 <common>{
 	{WS}		/* eat */

@@ -7,7 +7,6 @@ typedef struct
 {
 	FILE * fin;
 	ParserParam p;
-	ParserRList * plr;
 } Worker;
 
 void worker_clear(Worker * w);

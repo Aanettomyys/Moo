@@ -37,30 +37,36 @@
 %%
 
 all:		/* empty */
-	|	TEXT all
+	|	TEXT
 		{ 
-			((ParserParam*)data)->head = parser_l_push_back(((ParserParam*)data)->head, false, $<word>1[0]);
-			free($<word>1);
+			ParserResult * pr = malloc(sizeof(ParserResult));
+			pr->is_ast = false;
+			pr->p.s = $<word>1;
+			u_q_push(((ParserParam*)data)->q, pr);
+			YYACCEPT;
 		} 
-	|	parsable all 
-		{
-			$<prl>1->next = ((ParserParam *)data)->head;
-			((ParserParam *)data)->head = $<prl>1;
-		}
+	|	parsable { YYACCEPT; }
 	;
 parsable:	ENTRY actions params expression 
 		{ 
-			$<prl>$ = parser_l_push_back(NULL, true, $<ast>4, $<actn>2, ((ParserParam *)data)->ap);
+			ParserResult * pr = malloc(sizeof(*pr));
+			pr->is_ast = true;
+			pr->p.a.ast = $<ast>4;
+			pr->p.a.actn = $<actn>2;
+			pr->p.a.ap = malloc(sizeof(*(pr->p.a.ap)));
+			memcpy(pr->p.a.ap, ((ParserParam *)data)->ap, sizeof(*(pr->p.a.ap)));
 			((ParserParam *)data)->ap->precision = DEFAULT_PRECISION;
+			u_q_push(((ParserParam*)data)->q, pr);
 		}
 	;
 actions:	ACTN_BEGIN action_list ACTN_END { $<actn>$ = $<actn>2; }
 	;
 action_list:	ACTN_ACTION { $<actn>$ = $<actn>1; }
-	|	ACTN_ACTION ACTN_SEP action_list 
+	|	action_list ACTN_SEP ACTN_ACTION
 		{
 			if($<actn>3 & $<actn>1)
 				yyerror("Duplicate actions.");
+			YYABORT;
 			$<actn>$ = ($<actn>3 | $<actn>1); 
 		} 
 	;
@@ -69,7 +75,7 @@ params:		/* empty */
 	;
 param_list:	/* empty */
 	|	param
-	|	param PRMS_SEP param_list
+	|	param_list PRMS_SEP param
 	;
 param:		P_PRECISION PRMS_SET PRMS_VAL
 		{
