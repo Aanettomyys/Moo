@@ -7,9 +7,7 @@ int yyerror(char *s, ...)
 {
 	va_list ap;
 	va_start(ap, s);
-	fprintf(stderr, "Error: ");
 	vfprintf(stderr, s, ap);
-	fprintf(stderr, "\n");
 	return -1;
 }
 

@@ -34,7 +34,7 @@ NUM	([0-9]+)(("."([0-9]*))?)
 	"<"		BEGIN(actions); return ACTN_BEGIN;
 	"["		BEGIN(params); return PRMS_BEG;
 	"{"		BEGIN(expression); return EXPR_BEG;
-	.		{ yyerror("at %d:%d - %d:%d: Unexpected character `%c'.", 
+	.		{ yyerror("Lexer error at %d:%d - %d:%d: Unexpected character `%c'.", 
 				yylloc->first_line,
 				yylloc->first_column,
 				yylloc->last_line,
@@ -47,7 +47,7 @@ NUM	([0-9]+)(("."([0-9]*))?)
 	","		return ACTN_SEP;
 	"show"		yylval->actn = AST_SHOW; return ACTN_ACTION;
 	"reduce"	yylval->actn = AST_REDUCE; return ACTN_ACTION;
-	.		{ yyerror("at %d:%d - %d:%d: Unexpected character `%c'.", 
+	.		{ yyerror("Lexer error at %d:%d - %d:%d: Unexpected character `%c'.", 
 				yylloc->first_line,
 				yylloc->first_column,
 				yylloc->last_line,
@@ -61,7 +61,7 @@ NUM	([0-9]+)(("."([0-9]*))?)
 	"="		return PRMS_SET;
 	prec		return P_PRECISION;
 	{INT}		yylval->word = strdup(yytext); return PRMS_VAL;
-	.		{ yyerror("at %d:%d - %d:%d: Unexpected character `%c'.", 
+	.		{ yyerror("Lexer error at %d:%d - %d:%d: Unexpected character `%c'.", 
 				yylloc->first_line,
 				yylloc->first_column,
 				yylloc->last_line,
@@ -100,7 +100,7 @@ NUM	([0-9]+)(("."([0-9]*))?)
 	"="		return EXPR_EQL;
 	","		return EXPR_SEP;
 	{WORD}		yylval->word = strdup(yytext); return EXPR_VAR;
-	.		{ yyerror("at %d:%d - %d:%d: Unexpected character `%c'.", 
+	.		{ yyerror("Lexer error at %d:%d - %d:%d: Unexpected character `%c'.", 
 				yylloc->first_line,
 				yylloc->first_column,
 				yylloc->last_line,

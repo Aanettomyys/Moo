@@ -14,15 +14,15 @@ static Stack * ast_iterate(AST * a)
 		switch(a->klass)
 		{
 			case AST_EQL :
-				u_q_push(q, ((ASTEql*)a->p)->a1);
 				u_q_push(q, ((ASTEql*)a->p)->a2);
+				u_q_push(q, ((ASTEql*)a->p)->a1);
 				break;
 			case AST_BIF1 :
 				u_q_push(q, ((ASTBIF1*)a->p)->arg);
 				break;
 			case AST_OP :
-				u_q_push(q, ((ASTOp*)a->p)->left);
 				u_q_push(q, ((ASTOp*)a->p)->right);
+				u_q_push(q, ((ASTOp*)a->p)->left);
 				break;
 			default :
 				break;
