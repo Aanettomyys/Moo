@@ -1,12 +1,15 @@
 #include "worker.h"
-#include "actions.h"
 #include "utils.h"
 
-int yyparse(void * data);
+extern int yyparse(void * data);
+extern int yylex_init(void **);
+extern int yylex_destroy(void *);
+extern int yyset_in(FILE *, void *);
 
 void worker_init(Worker * w, FILE * in)
 {
 	yylex_init(&w->p.scanner);
+	w->p.finish = false;
 	w->p.q = u_q_new();
 	w->p.ap = malloc(sizeof(ActionsParams));
 	w->p.ap->precision = DEFAULT_PRECISION;
@@ -23,7 +26,7 @@ int worker_run(Worker * w)
 {
 	yyset_in(w->fin, w->p.scanner);
 	int result = 0;
-	while(!feof(w->fin)) 
+	while(!w->p.finish) 
 	{
 		result = yyparse(&w->p);
 		if(result != 0)
@@ -38,10 +41,9 @@ int worker_run(Worker * w)
 		ParserResult * it = i->p;
 		if(it->is_ast)
 		{
-			ASTActions actn = it->p.a.actn;
-			if(actn & AST_REDUCE)
+			if(it->p.a.actn & AST_REDUCE)
 			{
-				ast_action_reduce(it->p.a.ast, it->p.a.ap);
+				ast_reduce(it->p.a.ast, it->p.a.ap);
 			}
 		}
 		i = i->next;
@@ -51,20 +53,28 @@ int worker_run(Worker * w)
 
 void worker_flush(Worker * w, FILE * out)
 {
-	Node * i = w->p.q->head;
-	while(i != NULL)
+	ParserResult * pr;
+	while((pr = u_q_pop(w->p.q)) != NULL)
 	{
-		ParserResult * it = i->p;
-		if(it->is_ast)
+		if(pr->is_ast)
 		{
-			ASTActions actn = it->p.a.actn;
+			ASTActions actn = pr->p.a.actn;
 			if(actn & AST_SHOW)
-				ast_action_show(it->p.a.ast, it->p.a.ap, out);
+			{
+				fprintf(out, "$");
+				ast_show(pr->p.a.ast, pr->p.a.ap, out);
+				fprintf(out, "$");
+			}
+			if(actn & AST_DRAW)
+			{
+				fprintf(out, "\n\n");
+				ast_show_g(pr->p.a.ast, pr->p.a.ap, out);
+				fprintf(out, "\n\n");
+			}
 		}
 		else
 		{
-			fprintf(out, "%s", it->p.s);
+			fprintf(out, "%s", pr->p.s);
 		}
-		i = i->next;
 	}
 }

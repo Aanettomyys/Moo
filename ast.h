@@ -24,7 +24,8 @@ typedef struct
 typedef enum
 {
 	AST_SHOW = 1,
-	AST_REDUCE = 2
+	AST_REDUCE = 2,
+	AST_DRAW = 4
 } ASTActions;
 
 typedef enum
@@ -41,18 +42,12 @@ typedef enum
 	AST_BIF_SIN,
 	AST_BIF_COS,
 	AST_BIF_TAN,
-	AST_BIF_SEC,
-	AST_BIF_CSC,
-	AST_BIF_COT,
 	AST_BIF_ACOS,
 	AST_BIF_ASIN,
 	AST_BIF_ATAN,
 	AST_BIF_COSH,
 	AST_BIF_SINH,
 	AST_BIF_TANH,
-	AST_BIF_SECH,
-	AST_BIF_CSCH,
-	AST_BIF_COTH,
 	AST_BIF_ACOSH,
 	AST_BIF_ASINH,
 	AST_BIF_ATANH 
@@ -61,7 +56,6 @@ typedef enum
 typedef enum
 {
 	AST_EQL,
-	AST_SYSTEM,
 	AST_NUMERIC,
 	AST_BIF1,
 	AST_OP,
@@ -132,5 +126,8 @@ Strings *	u_strings_append(Strings * ss, char * s);
  */
 AST * 	ast_new(ASTClass klass, ...);
 AST *	ast_bif1_set_arg(AST * a, AST * arg);
+void 	ast_show(AST * p, ActionsParams * ap, FILE * o);
+void 	ast_reduce(AST * a, ActionsParams * ap);
+void 	ast_show_g(AST * a, ActionsParams * ap, FILE * o);
 
 #endif // __AST_H__

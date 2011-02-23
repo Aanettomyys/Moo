@@ -1,8 +1,7 @@
 #include "ast.h"
-#include "actions.h"
 #include "utils.h"
 
-static Stack * ast_iterate(AST * a)
+Stack * ast_iterate(AST * a)
 {
 	Stack * s = u_s_new();
 	Queue * q = u_q_new();
@@ -32,7 +31,7 @@ static Stack * ast_iterate(AST * a)
 	return s;
 }
 
-void ast_action_reduce(AST * a, ActionsParams * ap)
+void ast_reduce(AST * a, ActionsParams * ap)
 {
 	Stack * s = ast_iterate(a);
 	while(s->head != NULL)
@@ -69,6 +68,10 @@ switch(((ASTOp*)(a->p))->type)
 	case AST_OP_DIV :
 	mpfr_div(ai->v, l->v, r->v, GMP_RNDN);
 	break;
+
+	case AST_OP_POW :
+	mpfr_pow(ai->v, l->v, r->v, GMP_RNDN);
+	break;
 }
 mpfr_clear(l->v);
 mpfr_clear(r->v);
@@ -95,18 +98,12 @@ switch(((ASTBIF1*)a->p)->type)
 	case AST_BIF_SIN : mpfr_sin(ai->v, arg->v, GMP_RNDN); break;
 	case AST_BIF_COS : mpfr_cos(ai->v, arg->v, GMP_RNDN); break;
 	case AST_BIF_TAN : mpfr_tan(ai->v, arg->v, GMP_RNDN); break;
-	case AST_BIF_SEC : mpfr_sec(ai->v, arg->v, GMP_RNDN); break;
-	case AST_BIF_CSC : mpfr_csc(ai->v, arg->v, GMP_RNDN); break;
-	case AST_BIF_COT : mpfr_cot(ai->v, arg->v, GMP_RNDN); break;
 	case AST_BIF_ACOS : mpfr_acos(ai->v, arg->v, GMP_RNDN); break;
 	case AST_BIF_ASIN : mpfr_asin(ai->v, arg->v, GMP_RNDN); break;
 	case AST_BIF_ATAN : mpfr_atan(ai->v, arg->v, GMP_RNDN); break;
 	case AST_BIF_COSH : mpfr_cosh(ai->v, arg->v, GMP_RNDN); break;
 	case AST_BIF_SINH : mpfr_sinh(ai->v, arg->v, GMP_RNDN); break;
 	case AST_BIF_TANH : mpfr_tanh(ai->v, arg->v, GMP_RNDN); break;
-	case AST_BIF_SECH : mpfr_sech(ai->v, arg->v, GMP_RNDN); break;
-	case AST_BIF_CSCH : mpfr_csch(ai->v, arg->v, GMP_RNDN); break;
-	case AST_BIF_COTH : mpfr_coth(ai->v, arg->v, GMP_RNDN); break;
 	case AST_BIF_ACOSH : mpfr_acosh(ai->v, arg->v, GMP_RNDN); break;
 	case AST_BIF_ASINH : mpfr_asinh(ai->v, arg->v, GMP_RNDN); break;
 	case AST_BIF_ATANH : mpfr_atanh(ai->v, arg->v, GMP_RNDN); break;

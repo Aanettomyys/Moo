@@ -1,5 +1,7 @@
 \documentclass{article}
 \begin{document}
-@@<reduce>{1+2}
-end
+
+@@<show, draw, reduce>{ x ^ 2 * 1.5 + x }
+
 \end{document}
+

@@ -9,6 +9,7 @@ typedef struct
 	void * scanner;
 	Queue * q;
 	ActionsParams * ap;
+	bool finish;
 } ParserParam;
 
 typedef union

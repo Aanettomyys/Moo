@@ -6,7 +6,6 @@
 #include <stdlib.h>
 #include "parser_param.h"
 #include "ast.h"
-#include "actions.h"
 #include "utils.h"
 
 %}
@@ -14,13 +13,13 @@
 %locations
 %pure_parser
 
-%token ENTRY TEXT
+%token ENTRY TEXT ENDOFFILE
 %token ACTN_BEGIN ACTN_ACTION ACTN_SEP ACTN_END
 %token PRMS_BEG PRMS_SEP PRMS_SET PRMS_VAL PRMS_END
 %token EXPR_BEG EXPR_END EXPR_LBR EXPR_RBR EXPR_SEP
 
 /*
-	Availabel parametrs
+	Parametrs
 */
 %token P_PRECISION
 
@@ -36,7 +35,11 @@
 
 %%
 
-all:		/* empty */
+all:	|	ENDOFFILE 
+		{
+			((ParserParam *)data)->finish = true;
+			YYACCEPT;
+		}
 	|	TEXT
 		{ 
 			ParserResult * pr = malloc(sizeof(ParserResult));
@@ -65,8 +68,10 @@ action_list:	ACTN_ACTION { $<actn>$ = $<actn>1; }
 	|	action_list ACTN_SEP ACTN_ACTION
 		{
 			if($<actn>3 & $<actn>1)
+			{
 				yyerror("Duplicate actions.");
-			YYABORT;
+				YYABORT;
+			}
 			$<actn>$ = ($<actn>3 | $<actn>1); 
 		} 
 	;

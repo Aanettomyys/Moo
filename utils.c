@@ -59,6 +59,8 @@ void u_q_push(Queue * q, void * p)
 void * u_q_pop(Queue * q)
 {
 	Node * qn = q->head;
+	if(qn == NULL)
+		return NULL;
 	q->head = qn->next;
 	if(qn->next == NULL)
 		q->tail = NULL;
