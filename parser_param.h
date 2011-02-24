@@ -1,29 +1,31 @@
 #ifndef __PARSER_PARAM_H__
 #define __PARSER_PARAM_H__
 
+#include <stdbool.h>
+
 #include "ast.h"
 #include "utils.h"
 
 typedef struct
 {
 	void * scanner;
-	Queue * q;
-	ActionsParams * ap;
+	queue_t * q;
+	a_params_t * ap;
 	bool finish;
-} ParserParam;
+} p_param_t;
 
 typedef union
 {
-	AST * ast;
+	a_t * exp;
 	char * word;
-	Strings * ldn;
-	ASTActions actn;
-} ParserType;
+	slist_t * ldn;
+	a_actions_t actn;
+} p_t;
  
-#define YYSTYPE ParserType
+#define YYSTYPE p_t
 
 #define YYPARSE_PARAM data
-#define YYLEX_PARAM ((ParserParam *)data)->scanner
+#define YYLEX_PARAM ((p_param_t *)data)->scanner
 
 
 #endif // __PARSER_PARM_H__

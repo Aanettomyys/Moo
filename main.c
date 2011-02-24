@@ -13,7 +13,7 @@ const struct option lo[] = {
 	{ NULL,		0, NULL, 0 }
 };
 
-const char * so = "hoi";
+const char * so = "ho:i:";
 
 void usage(FILE * o, int ec)
 {
@@ -60,10 +60,10 @@ int main(int argc, char ** argv)
 				break;
 		}
 	} while(nextop != -1);
-	Worker w;
-	worker_init(&w, in);
-	if(!worker_run(&w))
-		worker_flush(&w, out);
+	worker_t w;
+	w_init(&w, in);
+	if(!w_run(&w))
+		w_flush(&w, out);
 	if(in != stdin)
 		fclose(in);
 	if(out != stdout)

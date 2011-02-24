@@ -1,33 +1,41 @@
 #ifndef __UTILS_H__
 #define __UTILS_H__
 
-#define DEFAULT_PRECISION 3
+typedef struct
+{
+	size_t size;
+	char ** ss;
+} slist_t;
 
-typedef struct _Node
+typedef struct _node_t
 {
 	void * p;
-	struct _Node * next;
+	struct _node_t * next;
 	
-} Node;
+} node_t;
 
 typedef struct
 {
-	Node * head;
-	Node * tail;
-} Queue;
+	node_t * head;
+	node_t * tail;
+} queue_t;
 
-typedef struct _ASTStack
+typedef struct
 {
-	Node * head;
-} Stack;
+	node_t * head;
+} u_stack_t;
 
 int yyerror(char *s, ...);
 
-Queue * 	u_q_new();
-void *		u_q_pop(Queue * q);
-void		u_q_push(Queue * q, void * p);
-Stack *		u_s_new();
-void *		u_s_pop(Stack * s);
-void		u_s_push(Stack * s, void * p);
+queue_t * 	u_q_new();
+void *		u_q_pop(queue_t *);
+void		u_q_push(queue_t *, void *);
+u_stack_t *	u_s_new();
+void *		u_s_pop(u_stack_t *);
+void		u_s_push(u_stack_t *, void *);
+slist_t *	u_sl_new();
+void		u_sl_append(slist_t *, char *);
+slist_t *	u_sl_clone(slist_t *);
+void		u_sl_delete(slist_t *);
 
 #endif // __UTILS_H__

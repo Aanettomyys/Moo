@@ -1,3 +1,5 @@
+#include <assert.h>
+
 #include "worker.h"
 #include "utils.h"
 
@@ -6,23 +8,20 @@ extern int yylex_init(void **);
 extern int yylex_destroy(void *);
 extern int yyset_in(FILE *, void *);
 
-void worker_init(Worker * w, FILE * in)
+void w_init(worker_t * w, FILE * in)
 {
 	yylex_init(&w->p.scanner);
 	w->p.finish = false;
 	w->p.q = u_q_new();
-	w->p.ap = malloc(sizeof(ActionsParams));
-	w->p.ap->precision = DEFAULT_PRECISION;
+	w->p.ap = malloc(sizeof(*(w->p.ap)));
+	assert( w->p.ap != NULL );
+	AST_PARAMS_DEFAULT(w->p.ap);
 	w->fin = in;
 }
 
-void worker_clear(Worker * w)
-{
-	free(w->p.ap);
-	yylex_destroy(w->p.scanner);
-}
 
-int worker_run(Worker * w)
+
+int w_run(worker_t * w)
 {
 	yyset_in(w->fin, w->p.scanner);
 	int result = 0;
@@ -35,15 +34,15 @@ int worker_run(Worker * w)
 			return result;
 		}
 	}
-	Node * i = w->p.q->head;
+	node_t * i = w->p.q->head;
 	while(i != NULL)
 	{
-		ParserResult * it = i->p;
+		p_result_t * it = i->p;
 		if(it->is_ast)
 		{
-			if(it->p.a.actn & AST_REDUCE)
+			if(it->p.ast.actn & AST_REDUCE)
 			{
-				ast_reduce(it->p.a.ast, it->p.a.ap);
+				a_reduce(it->p.ast.exp, it->p.ast.ap);
 			}
 		}
 		i = i->next;
@@ -51,30 +50,35 @@ int worker_run(Worker * w)
 	return 0;
 }
 
-void worker_flush(Worker * w, FILE * out)
+void w_flush(worker_t * w, FILE * out)
 {
-	ParserResult * pr;
+	p_result_t * pr;
 	while((pr = u_q_pop(w->p.q)) != NULL)
 	{
 		if(pr->is_ast)
 		{
-			ASTActions actn = pr->p.a.actn;
-			if(actn & AST_SHOW)
+			if(pr->p.ast.actn & AST_SHOW)
 			{
-				fprintf(out, "$");
-				ast_show(pr->p.a.ast, pr->p.a.ap, out);
-				fprintf(out, "$");
+				fprintf(out, "%s", pr->p.ast.ap->wrap);
+				a_show(pr->p.ast.exp, pr->p.ast.ap, out);
+				fprintf(out, "%s", pr->p.ast.ap->wrap);
 			}
-			if(actn & AST_DRAW)
+			if(pr->p.ast.actn & AST_DRAW)
 			{
 				fprintf(out, "\n\n");
-				ast_show_g(pr->p.a.ast, pr->p.a.ap, out);
+				a_show_g(pr->p.ast.exp, pr->p.ast.ap, out);
 				fprintf(out, "\n\n");
 			}
+			a_delete(pr->p.ast.exp);
+			free(pr->p.ast.ap);
 		}
 		else
 		{
-			fprintf(out, "%s", pr->p.s);
+			fprintf(out, "%s", pr->p.text);
+			free(pr->p.text);
 		}
 	}
+	free(w->p.q);
+	free(w->p.ap);
+	yylex_destroy(w->p.scanner);
 }

@@ -22,7 +22,6 @@ WS	[ \n\r\t]*
 WORD	[a-zA-Z]+
 INT	[0-9]+
 NUM	([0-9]+)(("."([0-9]*))?)
-
 %%
 
 <INITIAL>{
@@ -62,8 +61,15 @@ NUM	([0-9]+)(("."([0-9]*))?)
 	","		return PRMS_SEP;
 	"]"		BEGIN(common); return PRMS_END;
 	"="		return PRMS_SET;
-	prec		return P_PRECISION;
-	{INT}		yylval->word = strdup(yytext); return PRMS_VAL;
+	"prec"		return P_PRECISION;
+	"xmin"		return P_XMIN;
+	"xmax"		return P_XMAX;
+	"ymin"		return P_YMIN;
+	"ymax"		return P_YMAX;
+	"wrap"		return P_WRAP;
+	"$$"		return P_WRAP_2;
+	"$"		return P_WRAP_1;
+	{NUM}		yylval->word = strdup(yytext); return PRMS_VAL;
 	.		{ yyerror("Lexer error at %d:%d - %d:%d: Unexpected character `%c'.", 
 				yylloc->first_line,
 				yylloc->first_column,
@@ -81,19 +87,20 @@ NUM	([0-9]+)(("."([0-9]*))?)
 	"^"		return EXPR_POW;
 	"("		return EXPR_LBR;
 	")"		return EXPR_RBR;
-	"cosh"		yylval->ast = ast_new(AST_BIF1, AST_BIF_COSH); return EXPR_BIF1;
-	"sinh"		yylval->ast = ast_new(AST_BIF1, AST_BIF_SINH); return EXPR_BIF1;
-	"tanh"		yylval->ast = ast_new(AST_BIF1, AST_BIF_TANH); return EXPR_BIF1;
-	"acosh"		yylval->ast = ast_new(AST_BIF1, AST_BIF_ACOSH); return EXPR_BIF1;
-	"asinh"		yylval->ast = ast_new(AST_BIF1, AST_BIF_ASINH); return EXPR_BIF1;
-	"atanh"		yylval->ast = ast_new(AST_BIF1, AST_BIF_ATANH); return EXPR_BIF1;
-	"sin"		yylval->ast = ast_new(AST_BIF1, AST_BIF_SIN); return EXPR_BIF1;
-	"cos"		yylval->ast = ast_new(AST_BIF1, AST_BIF_COS); return EXPR_BIF1;
-	"tan"		yylval->ast = ast_new(AST_BIF1, AST_BIF_TAN); return EXPR_BIF1;
-	"acos"		yylval->ast = ast_new(AST_BIF1, AST_BIF_ACOS); return EXPR_BIF1;
-	"asin"		yylval->ast = ast_new(AST_BIF1, AST_BIF_ASIN); return EXPR_BIF1;
-	"atan"		yylval->ast = ast_new(AST_BIF1, AST_BIF_ATAN); return EXPR_BIF1;
-	{NUM}		yylval->ast = ast_new(AST_NUMERIC, yytext); return EXPR_NUM; 
+	"cosh"		yylval->exp = a_new(AST_BIF1, AST_BIF_COSH); return EXPR_BIF1;
+	"sinh"		yylval->exp = a_new(AST_BIF1, AST_BIF_SINH); return EXPR_BIF1;
+	"tanh"		yylval->exp = a_new(AST_BIF1, AST_BIF_TANH); return EXPR_BIF1;
+	"acosh"		yylval->exp = a_new(AST_BIF1, AST_BIF_ACOSH); return EXPR_BIF1;
+	"asinh"		yylval->exp = a_new(AST_BIF1, AST_BIF_ASINH); return EXPR_BIF1;
+	"atanh"		yylval->exp = a_new(AST_BIF1, AST_BIF_ATANH); return EXPR_BIF1;
+	"sin"		yylval->exp = a_new(AST_BIF1, AST_BIF_SIN); return EXPR_BIF1;
+	"cos"		yylval->exp = a_new(AST_BIF1, AST_BIF_COS); return EXPR_BIF1;
+	"tan"		yylval->exp = a_new(AST_BIF1, AST_BIF_TAN); return EXPR_BIF1;
+	"acos"		yylval->exp = a_new(AST_BIF1, AST_BIF_ACOS); return EXPR_BIF1;
+	"asin"		yylval->exp = a_new(AST_BIF1, AST_BIF_ASIN); return EXPR_BIF1;
+	"atan"		yylval->exp = a_new(AST_BIF1, AST_BIF_ATAN); return EXPR_BIF1;
+	"diff"		return EXPR_DIFF;
+	{NUM}		yylval->exp = a_new(AST_NUMERIC, yytext); return EXPR_NUM; 
 	"="		return EXPR_EQL;
 	","		return EXPR_SEP;
 	{WORD}		yylval->word = strdup(yytext); return EXPR_VAR;

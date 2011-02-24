@@ -1,135 +1,103 @@
 #include "ast.h"
 #include "utils.h"
 
-Stack * ast_iterate(AST * a)
+void a_reduce(a_t * exp, a_params_t * ap)
 {
-	Stack * s = u_s_new();
-	Queue * q = u_q_new();
-	u_q_push(q, a);
-	while(q->head != NULL)
+	u_stack_t * s = a_iterate(exp);
+	while((exp = u_s_pop(s)) != NULL)
 	{
-		AST * a = u_q_pop(q);
-		u_s_push(s, a);
-		switch(a->klass)
-		{
-			case AST_EQL :
-				u_q_push(q, ((ASTEql*)a->p)->a2);
-				u_q_push(q, ((ASTEql*)a->p)->a1);
-				break;
-			case AST_BIF1 :
-				u_q_push(q, ((ASTBIF1*)a->p)->arg);
-				break;
-			case AST_OP :
-				u_q_push(q, ((ASTOp*)a->p)->right);
-				u_q_push(q, ((ASTOp*)a->p)->left);
-				break;
-			default :
-				break;
-		};
-	}
-	free(q);
-	return s;
-}
-
-void ast_reduce(AST * a, ActionsParams * ap)
-{
-	Stack * s = ast_iterate(a);
-	while(s->head != NULL)
-	{
-		AST * a = u_s_pop(s);
 /**----------START RULE SECTION----------**/
-
+do {
 /***---------- BEGIN RULE----------***/
 /*-CONDITION-*/
 if(
-	a->klass == AST_OP &&
-	((ASTOp*)(a->p))->left->klass == AST_NUMERIC && 
-	((ASTOp*)(a->p))->right->klass == AST_NUMERIC)
+	exp->klass == AST_OP &&
+	((a_op_t *)(exp->p))->lexp->klass == AST_NUMERIC && 
+	((a_op_t *)(exp->p))->rexp->klass == AST_NUMERIC)
 {
 /*-BEGIN ACTION-*/
-ASTNumeric * ai = malloc(sizeof(ASTNumeric));
-mpfr_init2(ai->v, AST_MPFR_PREC);
-ASTNumeric * l = ((ASTOp*)(a->p))->left->p;
-ASTNumeric * r = ((ASTOp*)(a->p))->right->p;
-switch(((ASTOp*)(a->p))->type)
+a_numeric_t * p = malloc(sizeof(*p));
+mpfr_init2(p->v, AST_MPFR_PREC);
+a_numeric_t * l = ((a_op_t *)(exp->p))->lexp->p;
+a_numeric_t * r = ((a_op_t *)(exp->p))->rexp->p;
+switch(((a_op_t *)(exp->p))->klass)
 {
 	case AST_OP_ADD :
-	mpfr_add(ai->v, l->v, r->v, GMP_RNDN);
+	mpfr_add(p->v, l->v, r->v, GMP_RNDN);
 	break;
 	
 	case AST_OP_SUB :
-	mpfr_sub(ai->v, l->v, r->v, GMP_RNDN);
+	mpfr_sub(p->v, l->v, r->v, GMP_RNDN);
 	break;
 	
 	case AST_OP_MUL :
-	mpfr_mul(ai->v, l->v, r->v, GMP_RNDN);
+	mpfr_mul(p->v, l->v, r->v, GMP_RNDN);
 	break;
 	
 	case AST_OP_DIV :
-	mpfr_div(ai->v, l->v, r->v, GMP_RNDN);
+	mpfr_div(p->v, l->v, r->v, GMP_RNDN);
 	break;
 
 	case AST_OP_POW :
-	mpfr_pow(ai->v, l->v, r->v, GMP_RNDN);
+	mpfr_pow(p->v, l->v, r->v, GMP_RNDN);
 	break;
 }
-mpfr_clear(l->v);
-mpfr_clear(r->v);
-free(l); free(r);
-free(a->p);
-a->klass = AST_NUMERIC;
-a->p = ai;
+a_delete(((a_op_t *)(exp->p))->lexp);
+a_delete(((a_op_t *)(exp->p))->rexp);
+free(exp->p);
+exp->klass = AST_NUMERIC;
+exp->p = p;
 /*-END ACTION-*/
-}
+continue; }
 /**----------END RULE---------**/
 
 /**----------BEGIN RULE---------*/
 /*-CONDITION-*/
 if(
-	a->klass == AST_BIF1 &&
-	((ASTBIF1*)a->p)->arg->klass == AST_NUMERIC)
+	exp->klass == AST_BIF1 &&
+	((a_bif1_t *)(exp->p))->exp->klass == AST_NUMERIC)
 {
 /*-BEGIN ACTION-*/
-ASTNumeric * ai = malloc(sizeof(ASTNumeric));
-mpfr_init2(ai->v, AST_MPFR_PREC);
-ASTNumeric * arg = ((ASTBIF1*)a->p)->arg->p;
-switch(((ASTBIF1*)a->p)->type)
+a_numeric_t * p = malloc(sizeof(*p));
+mpfr_init2(p->v, AST_MPFR_PREC);
+a_numeric_t * arg = ((a_bif1_t *)(exp->p))->exp->p;
+switch(((a_bif1_t *)(exp->p))->klass)
 {
-	case AST_BIF_SIN : mpfr_sin(ai->v, arg->v, GMP_RNDN); break;
-	case AST_BIF_COS : mpfr_cos(ai->v, arg->v, GMP_RNDN); break;
-	case AST_BIF_TAN : mpfr_tan(ai->v, arg->v, GMP_RNDN); break;
-	case AST_BIF_ACOS : mpfr_acos(ai->v, arg->v, GMP_RNDN); break;
-	case AST_BIF_ASIN : mpfr_asin(ai->v, arg->v, GMP_RNDN); break;
-	case AST_BIF_ATAN : mpfr_atan(ai->v, arg->v, GMP_RNDN); break;
-	case AST_BIF_COSH : mpfr_cosh(ai->v, arg->v, GMP_RNDN); break;
-	case AST_BIF_SINH : mpfr_sinh(ai->v, arg->v, GMP_RNDN); break;
-	case AST_BIF_TANH : mpfr_tanh(ai->v, arg->v, GMP_RNDN); break;
-	case AST_BIF_ACOSH : mpfr_acosh(ai->v, arg->v, GMP_RNDN); break;
-	case AST_BIF_ASINH : mpfr_asinh(ai->v, arg->v, GMP_RNDN); break;
-	case AST_BIF_ATANH : mpfr_atanh(ai->v, arg->v, GMP_RNDN); break;
+	case AST_BIF_SIN : mpfr_sin(p->v, arg->v, GMP_RNDN); break;
+	case AST_BIF_COS : mpfr_cos(p->v, arg->v, GMP_RNDN); break;
+	case AST_BIF_TAN : mpfr_tan(p->v, arg->v, GMP_RNDN); break;
+	case AST_BIF_ACOS : mpfr_acos(p->v, arg->v, GMP_RNDN); break;
+	case AST_BIF_ASIN : mpfr_asin(p->v, arg->v, GMP_RNDN); break;
+	case AST_BIF_ATAN : mpfr_atan(p->v, arg->v, GMP_RNDN); break;
+	case AST_BIF_COSH : mpfr_cosh(p->v, arg->v, GMP_RNDN); break;
+	case AST_BIF_SINH : mpfr_sinh(p->v, arg->v, GMP_RNDN); break;
+	case AST_BIF_TANH : mpfr_tanh(p->v, arg->v, GMP_RNDN); break;
+	case AST_BIF_ACOSH : mpfr_acosh(p->v, arg->v, GMP_RNDN); break;
+	case AST_BIF_ASINH : mpfr_asinh(p->v, arg->v, GMP_RNDN); break;
+	case AST_BIF_ATANH : mpfr_atanh(p->v, arg->v, GMP_RNDN); break;
 };
-mpfr_clear(arg->v);
-a->klass = AST_NUMERIC;
-free(arg);
-free(a->p);
-a->p = ai;
+a_delete(((a_bif1_t *)(exp->p))->exp);
+exp->klass = AST_NUMERIC;
+free(exp->p);
+exp->p = p;
 /*-END ACTION-*/
-}
+continue; }
 /**----------END RULE----------**/
 
 /**----------BEGIN RULE----------*/
 /*-CONDITION-*/
 if(
-	a->klass == AST_NUMERIC &&
-	a->negate)
+	exp->klass == AST_NUMERIC &&
+	exp->negate)
 {
 /*-BEGIN ACTION-*/
-mpfr_neg(((ASTNumeric *)(a->p))->v, ((ASTNumeric *)(a->p))->v, GMP_RNDN);
-a->negate = false;
+mpfr_neg(((a_numeric_t *)(exp->p))->v,
+	((a_numeric_t *)(exp->p))->v, GMP_RNDN);
+exp->negate = false;
 /*-END ACTION-*/
-}
+continue; }
 /**----------END RULE----------*/
-
+break; } while(1);
 /**----------END RULE SECTION----------**/
 	}
 	free(s);

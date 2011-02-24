@@ -1,94 +1,130 @@
+#include <stdarg.h>
+#include <string.h>
+#include <assert.h>
+
 #include "ast.h"
 #include "utils.h"
-#include <stdarg.h>
-#include <strings.h>
 
 int yyerror(char *s, ...)
 {
 	va_list ap;
 	va_start(ap, s);
 	vfprintf(stderr, s, ap);
+	fprintf(stderr, "\n");
+	exit(-1);
 	return -1;
 }
 
-Strings * u_strings_new(char * s)
+slist_t * u_sl_new()
 {
-	Strings * ss = malloc(sizeof(Strings));
-	ss->size = 1;
-	ss->ss = malloc(sizeof(char *));
-	ss->ss[0] = s;
-	return ss;
+	slist_t * sl = malloc(sizeof(*sl));
+	assert( sl != NULL );
+	sl->size = 0;
+	sl->ss = NULL;
+	return sl;
 }
 
-Strings * u_strings_append(Strings * ss, char * s)
+slist_t * u_sl_clone(slist_t * sl1)
 {
-	ss->size++;
-	ss->ss = realloc(ss->ss, ss->size * sizeof(char *));
-	ss->ss[ss->size - 1] = s;
-	return ss;
+	slist_t * sl2 = malloc(sizeof(*sl2));
+	assert( sl2 != NULL );
+	sl2->size = sl1->size;
+	sl2->ss = malloc(sizeof(char *) * sl2->size);
+	assert( sl2->ss != NULL );
+	for(size_t i = 0; i < sl2->size; i++)
+	{
+		sl2->ss[i] = strdup(sl1->ss[i]);
+		assert( sl2->ss[i] != NULL );
+	}
+	return sl2;
 }
 
-Queue * u_q_new()
+void u_sl_delete(slist_t * sl)
 {
-	Queue * q = malloc(sizeof(Queue));
+	for(size_t i = 0; i < sl->size; i++)
+	{
+		free(sl->ss[i]);
+	}
+	free(sl->ss);
+	free(sl);
+}
+
+
+void u_sl_append(slist_t * sl, char * s)
+{
+	sl->size++;
+	sl->ss = realloc(sl->ss, sl->size * sizeof(char *));
+	assert( sl->ss != NULL );
+	sl->ss[sl->size - 1] = s;
+}
+
+queue_t * u_q_new()
+{
+	queue_t * q = malloc(sizeof(*q));
+	assert( q != NULL );
 	q->head = NULL;
 	q->tail = NULL;
 	return q;
 }
 
-void u_q_push(Queue * q, void * p)
+void u_q_push(queue_t * q, void * p)
 {
-	Node * qn = malloc(sizeof(Node));
-	qn->p = p;
-	qn->next = NULL;
+	node_t * n = malloc(sizeof(*n));
+	assert( n != NULL );
+	n->p = p;
+	n->next = NULL;
 	if(q->head == NULL)
 	{
-		q->head = qn;
+		q->head = n;
 	}
 	if(q->tail == NULL) 
 	{
-		q->tail = qn;
+		q->tail = n;
 	}
 	else
 	{
-		q->tail->next = qn;
-		q->tail = qn;
+		q->tail->next = n;
+		q->tail = n;
 	}
 }
 
-void * u_q_pop(Queue * q)
+void * u_q_pop(queue_t * q)
 {
-	Node * qn = q->head;
-	if(qn == NULL)
+	node_t * n = q->head;
+	if(n == NULL)
 		return NULL;
-	q->head = qn->next;
-	if(qn->next == NULL)
+	q->head = n->next;
+	if(n->next == NULL)
 		q->tail = NULL;
-	void * p = qn->p;
-	free(qn);
+	void * p = n->p;
+	free(n);
 	return p;
 }
 
-Stack * u_s_new()
+u_stack_t * u_s_new()
 {
-	Stack * s = malloc(sizeof(Stack));
+	u_stack_t * s = malloc(sizeof(*s));
+	assert( s != NULL );
 	s->head = NULL;
 	return s;
 }
 
-void u_s_push(Stack * s, void * p)
+void u_s_push(u_stack_t * s, void * p)
 {
-	Node * sn = malloc(sizeof(Node));
-	sn->p = p;
-	sn->next = s->head;
-	s->head = sn;
+	node_t * n = malloc(sizeof(*n));
+	assert( n != NULL );
+	n->p = p;
+	n->next = s->head;
+	s->head = n;
 }
 
-void * u_s_pop(Stack * s)
+void * u_s_pop(u_stack_t * s)
 {
-	Node * sn = s->head;
-	s->head = sn->next;
-	void * p = sn->p;
-	free(sn);
+	node_t * n = s->head;
+	if(n == NULL)
+		return NULL;
+	s->head = n->next;
+	void * p = n->p;
+	free(n);
 	return p;
 }

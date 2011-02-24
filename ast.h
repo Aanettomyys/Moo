@@ -8,25 +8,35 @@
 #include <stdio.h>
 #include <mpfr.h>
 
-#define AST_MPFR_PREC 32
+#include "utils.h"
 
-typedef struct
-{
-	size_t size;
-	char ** ss;
-} Strings;
+#define AST_MPFR_PREC 32
+#define AST_PARAMS_DEFAULT(ap) \
+	do { \
+		ap->precision = 3; \
+		ap->x_min = 0.0; \
+		ap->x_max = 10.0; \
+		ap->y_min = 0.0; \
+		ap->y_max = 10.0; \
+		ap->wrap = "$"; \
+	} while(0)
 
 typedef struct
 {
 	int precision;
-} ActionsParams;
+	double x_min;
+	double x_max;
+	double y_min;
+	double y_max;
+	char * wrap;
+} a_params_t;
 
 typedef enum
 {
 	AST_SHOW = 1,
 	AST_REDUCE = 2,
 	AST_DRAW = 4
-} ASTActions;
+} a_actions_t;
 
 typedef enum
 {
@@ -35,7 +45,7 @@ typedef enum
 	AST_OP_MUL,
 	AST_OP_DIV,
 	AST_OP_POW
-} ASTOpType;
+} a_op_tt;
 
 typedef enum
 {
@@ -51,83 +61,90 @@ typedef enum
 	AST_BIF_ACOSH,
 	AST_BIF_ASINH,
 	AST_BIF_ATANH 
-} ASTBIFType1;
+} a_bif1_tt;
 
 typedef enum
 {
 	AST_EQL,
+	AST_DIFF,
 	AST_NUMERIC,
 	AST_BIF1,
 	AST_OP,
 	AST_VAR
-} ASTClass;
+} a_tt;
 
 typedef struct
 {
-	ASTClass klass;
+	a_tt klass;
 	bool negate;
 	void * p;
-} AST;
+} a_t;
 
 typedef struct
 {
-	ASTBIFType1 type;
-	AST * arg;
-} ASTBIF1;
+	a_t * exp;
+	slist_t * by;
+} a_diff_t;
+
+typedef struct
+{
+	a_bif1_tt klass;
+	a_t * exp;
+} a_bif1_t;
 
 typedef struct
 {
 	mpfr_t v;
-} ASTNumeric;
+} a_numeric_t;
 
 typedef struct
 {
-	ASTOpType type;
-	AST * left;
-	AST * right;
-} ASTOp;
+	a_op_tt klass;
+	a_t * lexp;
+	a_t * rexp;
+} a_op_t;
 
 typedef struct
 {
 	char * name;
-	Strings * ldn;
-} ASTVar;
+	slist_t * ds;
+} a_var_t;
 
 typedef struct
 {
-	AST * a1;
-	AST * a2;
-} ASTEql;
+	a_t * lexp;
+	a_t * rexp;
+} a_eql_t;
 
 typedef struct
 {
 	bool is_ast;
 	union 
 	{
-		char * s;
+		char * text;
 		struct
 		{
-			AST * ast;
-			ASTActions actn;
-			ActionsParams * ap;
-		} a;
+			a_t * exp;
+			a_actions_t actn;
+			a_params_t * ap;
+		} ast;
 	} p;
-} ParserResult;
-
-Strings *	u_strings_new(char * s);
-Strings *	u_strings_append(Strings * ss, char * s);
+} p_result_t;
 
 /**
  * ast_new(AST_NUMERIC, const char * s);
  * ast_new(AST_OP, ASTOpType t, AST * l, AST * r);
- * ast_new(AST_VAR, char * name, NULL | Strings * ldn);
+ * ast_new(AST_VAR, char * name, Strings * ldn);
  * ast_new(AST_BIF1, ASTBIFType1 t);
+ * ast_new(AST_DIFF, AST * exp, Strings * by);
  * ast_new(AST_EQL, AST * a1, AST * a2);
  */
-AST * 	ast_new(ASTClass klass, ...);
-AST *	ast_bif1_set_arg(AST * a, AST * arg);
-void 	ast_show(AST * p, ActionsParams * ap, FILE * o);
-void 	ast_reduce(AST * a, ActionsParams * ap);
-void 	ast_show_g(AST * a, ActionsParams * ap, FILE * o);
+a_t * 		a_new(a_tt, ...);
+void		a_show(a_t *, a_params_t *, FILE *);
+void		a_reduce(a_t *, a_params_t *);
+void		a_show_g(a_t *, a_params_t *, FILE *);
+void		a_delete(a_t *);
+a_t *		a_clone(const a_t *);
+u_stack_t *	a_iterate(a_t *);
 
 #endif // __AST_H__
