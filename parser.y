@@ -275,9 +275,7 @@ expr:		expr EXPR_ADD expr
 	|	EXPR_DIFF EXPR_VAR expr %prec EXPR_DIFF
 		{
 			if(actn & AST_DRAW) lyyerror(@1, "differential in grap.");
-			u_slist_t * sl = u_sl_new();
-			u_sl_append(sl, $<word>2);
-			$<exp>$ = a_new(AST_DIFF, $<exp>3, sl);
+			$<exp>$ = a_new(AST_DIFF, $<exp>3, $<word>2);
 		}
 	;
 

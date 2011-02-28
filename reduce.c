@@ -1,3 +1,5 @@
+#include <assert.h>
+
 #include "ast.h"
 #include "utils.h"
 
@@ -6,6 +8,154 @@
 #define END_RULE continue; }
 #define END_RULE_SECTION break; } while(1);
 
+
+static void a_diff(a_t * exp, const char * by, a_params_t * ap)
+{
+	switch(AKLASS(exp))
+	{
+		case AST_OP :
+		{
+			if(!a_depend_on(exp, by))
+			{
+				a_delete(AOPR(exp));
+				a_delete(AOPL(exp));
+				AKLASS(exp) = AST_NUMERIC;
+				mpfr_init2(ANUM(exp), AST_MPFR_PREC);
+				mpfr_set_d(ANUM(exp), 0.0, GMP_RNDN);
+				break;
+			}
+			switch(AOPK(exp))
+			{
+				case AST_OP_ADD :
+				{ 
+					a_diff(AOPL(exp), by, ap);
+					a_diff(AOPR(exp), by, ap);
+					a_reduce(exp, ap);
+				} break;
+				case AST_OP_SUB :
+				{ 
+					a_diff(AOPL(exp), by, ap);
+					a_diff(AOPR(exp), by, ap);
+					a_reduce(exp, ap);
+				} break;
+				case AST_OP_MUL :
+				{
+					a_t * ll = AOPL(exp);
+					a_t * lr = AOPR(exp);
+					a_t * rl = a_clone(ll);
+					a_t * rr = a_clone(lr);
+					a_diff(ll, by, ap);
+					a_diff(rr, by, ap);
+					a_t * l = a_new(AST_OP, AST_OP_MUL, ll, lr);
+					a_t * r = a_new(AST_OP, AST_OP_MUL, rl, rr);
+					AOPK(exp) = AST_OP_ADD;
+					AOPL(exp) = l;
+					AOPR(exp) = r;
+					a_reduce(exp, ap);
+				} break;
+				case AST_OP_DIV :
+				{
+					a_t * ll = AOPL(exp);
+					a_t * lr = AOPR(exp);
+					a_t * rl = a_clone(ll);
+					a_t * rr = a_clone(lr);
+					a_t * down = a_new(AST_OP, AST_OP_MUL, 
+						a_clone(lr), a_clone(lr));
+					a_diff(ll, by, ap);
+					a_diff(rr, by, ap);
+					a_t * l = a_new(AST_OP, AST_OP_MUL, ll, lr);
+					a_t * r = a_new(AST_OP, AST_OP_MUL, rl, rr);
+					a_t * up = a_new(AST_OP, AST_OP_SUB, l, r);
+					AOPL(exp) = up;
+					AOPR(exp) = down;
+					a_reduce(exp, ap);
+				} break;
+				default : assert(0); break;
+			}			
+		} break;
+		case AST_NUMERIC :
+			mpfr_set_d(ANUM(exp), 0.0, GMP_RNDN);
+			break;
+		case AST_BIF1 :
+		{
+			if(!a_depend_on(ABIF1E(exp), by))
+			{
+				a_delete(ABIF1E(exp));
+				mpfr_init2(ANUM(exp), AST_MPFR_PREC);
+				mpfr_set_d(ANUM(exp), 0.0, GMP_RNDN);
+				AKLASS(exp) = AST_NUMERIC;
+				break;
+			}
+			switch(ABIF1K(exp))
+			{
+				case AST_BIF_SIN :
+				{
+					a_t * right = a_clone(ABIF1E(exp));
+					a_t * left = a_new(AST_BIF1, AST_BIF_COS);
+					a_diff(right, by, ap);
+					a_reduce(right, ap);
+					ABIF1E(left) = ABIF1E(exp);
+					AKLASS(exp) = AST_OP;
+					AOPK(exp) = AST_OP_MUL;
+					AOPL(exp) = left;
+					AOPR(exp) = right;
+				} break;
+				case AST_BIF_COS :
+				{
+					a_t * right = a_clone(ABIF1E(exp));
+					right->negate = true;
+					a_t * left = a_new(AST_BIF1, AST_BIF_SIN);
+					a_diff(right, by, ap);
+					a_reduce(right, ap);
+					ABIF1E(left) = ABIF1E(exp);
+					AKLASS(exp) = AST_OP;
+					AOPK(exp) = AST_OP_MUL;
+					AOPL(exp) = left;
+					AOPR(exp) = right;
+				} break;
+				default : assert(0); break;
+			}
+		} break;
+		case AST_VAR :
+		{
+			if(!strcmp(AVARN(exp), by))
+			{
+				free(AVARN(exp));
+				u_sl_delete(AVARD(exp));
+				AKLASS(exp) = AST_NUMERIC;
+				mpfr_init2(ANUM(exp), AST_MPFR_PREC);
+				mpfr_set_d(ANUM(exp), 1.0, GMP_RNDN);
+				break;
+			} 
+			else if(a_depend_on(exp, by))
+			{
+				a_t * exp1 = malloc(sizeof(*exp1));
+				AKLASS(exp1) = AST_VAR;
+				AVARN(exp1) = AVARN(exp);
+				AVARD(exp1) = AVARD(exp);
+				AKLASS(exp) = AST_DIFF;
+				ADIFFE(exp) = exp1;
+				ADIFFB(exp) = strdup(by);
+				break;
+			} 
+			else
+			{
+				AKLASS(exp) = AST_NUMERIC;
+				free(AVARN(exp));
+				u_sl_delete(AVARD(exp));
+				mpfr_init2(ANUM(exp), AST_MPFR_PREC);
+				mpfr_set_d(ANUM(exp), 0.0, GMP_RNDN);
+				break;
+			}
+			assert(0);
+		} break;
+		default : assert(0); break;
+	}
+}
+
+
+					
+
 void a_reduce(a_t * exp, a_params_t * ap)
 {
 	u_stack_t * s = a_iterate(exp);
@@ -13,6 +163,97 @@ void a_reduce(a_t * exp, a_params_t * ap)
 	{
 
 START_RULE_SECTION
+
+CONDITION(AKLASS(exp) == AST_OP &&
+	AOPK(exp) == AST_OP_ADD &&
+	AKLASS(AOPL(exp)) == AST_NUMERIC &&
+	!mpfr_cmp_d(ANUM(AOPL(exp)), 0.0))
+
+a_delete(AOPL(exp));
+AKLASS(exp) = AKLASS(AOPR(exp));
+a_t * clean = AOPR(exp); 
+exp->p = AOPR(exp)->p;
+free(clean);
+
+END_RULE
+
+CONDITION(AKLASS(exp) == AST_OP &&
+	AOPK(exp) == AST_OP_ADD &&
+	AKLASS(AOPR(exp)) == AST_NUMERIC &&
+	!mpfr_cmp_d(ANUM(AOPR(exp)), 0.0))
+
+a_delete(AOPR(exp));
+AKLASS(exp) = AKLASS(AOPL(exp));
+a_t * clean = AOPL(exp); 
+exp->p = AOPL(exp)->p;
+free(clean);
+
+END_RULE
+
+CONDITION(AKLASS(exp) == AST_OP &&
+	AOPK(exp) == AST_OP_MUL &&
+	AKLASS(AOPL(exp)) == AST_NUMERIC &&
+	!mpfr_cmp_d(ANUM(AOPL(exp)), 0.0))
+
+a_delete(AOPR(exp));
+AKLASS(exp) = AKLASS(AOPL(exp));
+a_t * clean = AOPL(exp); 
+exp->p = AOPL(exp)->p;
+free(clean);
+
+END_RULE
+
+CONDITION(AKLASS(exp) == AST_OP &&
+	AOPK(exp) == AST_OP_MUL &&
+	AKLASS(AOPR(exp)) == AST_NUMERIC &&
+	!mpfr_cmp_d(ANUM(AOPR(exp)), 0.0))
+
+a_delete(AOPL(exp));
+AKLASS(exp) = AKLASS(AOPR(exp));
+a_t * clean = AOPR(exp); 
+exp->p = AOPR(exp)->p;
+free(clean);
+
+END_RULE
+
+CONDITION(AKLASS(exp) == AST_OP &&
+	AOPK(exp) == AST_OP_MUL &&
+	AKLASS(AOPL(exp)) == AST_NUMERIC &&
+	!mpfr_cmp_d(ANUM(AOPL(exp)), 1.0))
+
+a_delete(AOPL(exp));
+AKLASS(exp) = AKLASS(AOPR(exp));
+a_t * clean = AOPR(exp); 
+exp->p = AOPR(exp)->p;
+free(clean);
+
+END_RULE
+
+CONDITION(AKLASS(exp) == AST_OP &&
+	AOPK(exp) == AST_OP_MUL &&
+	AKLASS(AOPR(exp)) == AST_NUMERIC &&
+	!mpfr_cmp_d(ANUM(AOPR(exp)), 1.0))
+
+a_delete(AOPR(exp));
+AKLASS(exp) = AKLASS(AOPL(exp));
+a_t * clean = AOPL(exp); 
+exp->p = AOPL(exp)->p;
+free(clean);
+
+END_RULE
+
+CONDITION(AKLASS(exp) == AST_DIFF && 
+	AKLASS(ADIFFE(exp)) != AST_DIFF &&
+	!(AKLASS(ADIFFE(exp)) == AST_VAR &&
+		strcmp(ADIFFB(exp), AVARN(ADIFFE(exp))) &&
+		a_depend_on(ADIFFE(exp), ADIFFB(exp))))
+
+a_diff(ADIFFE(exp), ADIFFB(exp), ap);
+AKLASS(exp) = AKLASS(ADIFFE(exp));
+free(ADIFFB(exp));
+exp->p = ADIFFE(exp)->p;
+
+END_RULE
 
 CONDITION(exp->klass == AST_OP &&
 	exp->p.op.lexp->klass == AST_NUMERIC && 
@@ -84,6 +325,8 @@ exp->negate = false;
 END_RULE
 
 END_RULE_SECTION
+
 	}
 	free(s);
 }
+

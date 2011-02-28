@@ -84,7 +84,7 @@ void a_show(a_t * exp, a_params_t * ap)
 			break;
 		case AST_DIFF :
 			fprintf(yyout, "\\frac{\\mathrm{d}}"
-				"{\\mathrm{d}%s}", ADIFFB(exp)->ss[0]);
+				"{\\mathrm{d}%s}", ADIFFB(exp));
 			a_show(ADIFFE(exp), ap);
 			break;
 		default : assert(0); break;

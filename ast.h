@@ -96,7 +96,7 @@ typedef struct _a_t
 		struct 
 		{
 			struct _a_t * exp;
-			u_slist_t * by;
+			char * by;
 		} diff;
 		struct
 		{
@@ -145,5 +145,6 @@ void		a_show_g(a_t *, a_params_t *);
 void		a_delete(a_t *);
 a_t *		a_clone(const a_t *);
 u_stack_t *	a_iterate(a_t *);
+bool		a_depend_on(a_t *, const char *);
 
 #endif // __AST_H__

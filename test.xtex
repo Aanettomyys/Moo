@@ -1,7 +1,21 @@
 \documentclass{article}
 \begin{document}
 
-@@<draw, reduce> { 1+1 }
+@@<reduce, show>{ x + 0 = 0 + x }
+@@<reduce, show>{ x * 0 = 0 * x }
+@@<reduce, show>{ x * 1 = 1 * x }
+@@<reduce, show>{ diff y sin(1 + 1) = 0 }
+@@<reduce, show>{ diff x x = 1 }
+@@<reduce, show>{ diff x sin(x)  = cos(x)}
+@@<reduce, show>{ diff x x + y = diff x y + x }
+@@<reduce, show>[wrap=$$]{ diff x y(x) + x }
+@@<reduce, show>{ diff x x + x + x + x = 4 }
+@@<reduce, show>{ diff x x - 1 = 1 }
+@@<reduce, show>{ diff x x - x + x - x = 0 }
+@@<reduce, show>{ diff x x * 2  =  2 } 
+@@<reduce, show>{ diff x x * x = x + x }
+@@<reduce, show>{ diff x x / 2 = 0.5 }
+@@<reduce, show>{ diff x (x + 1) / x }
 
 \end{document}
 

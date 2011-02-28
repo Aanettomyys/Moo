@@ -1,5 +1,6 @@
 #include <stdarg.h>
 #include <assert.h>
+#include <stdbool.h>
 #include <mpfr.h>
 
 #include "utils.h"
@@ -47,7 +48,7 @@ a_t * a_new(a_tt klass, ...)
 		case AST_DIFF :
 		{
 			exp->p.diff.exp = va_arg(va, a_t *);
-			exp->p.diff.by = va_arg(va, u_slist_t *);
+			exp->p.diff.by = va_arg(va, char *);
 		} break;
 		default : assert(0); break;
 	};
@@ -72,7 +73,7 @@ a_t * a_clone(const a_t * exp)
 		case AST_DIFF :
 		{
 			exp1->p.diff.exp = a_clone(exp->p.diff.exp);
-			exp1->p.diff.by = u_sl_clone(exp->p.diff.by);
+			exp1->p.diff.by = strdup(exp->p.diff.by);
 		} break;
 		case AST_NUMERIC :
 		{
@@ -115,7 +116,7 @@ void a_delete(a_t * exp)
 		case AST_DIFF :
 		{
 			a_delete(exp->p.diff.exp);
-			u_sl_delete(exp->p.diff.by);
+			free(exp->p.diff.by);
 		} break;
 		case AST_NUMERIC :
 		{
@@ -170,4 +171,32 @@ u_stack_t * a_iterate(a_t * exp)
 	}
 	free(q);
 	return s;
+}
+
+bool a_depend_on(a_t * exp, const char * var)
+{
+	switch(AKLASS(exp))
+	{
+		case AST_DIFF :
+			return a_depend_on(ADIFFE(exp), var);
+		case AST_NUMERIC :
+			return false;
+		case AST_BIF1 :
+			return a_depend_on(ABIF1E(exp), var);
+		case AST_OP :
+			return a_depend_on(AOPL(exp), var) ||
+				a_depend_on(AOPR(exp), var);
+		case AST_VAR :
+		{
+			if(!strcmp(AVARN(exp), var))
+				return true;
+			for(size_t i = 0; i < AVARD(exp)->size; ++i)
+				if(!strcmp(AVARD(exp)->ss[i], var))
+					return true;
+			return false;
+		} break;
+		default : assert(0); break;
+	}
+	assert(0);
+	return false;
 }
