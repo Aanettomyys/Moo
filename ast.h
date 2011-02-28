@@ -13,15 +13,29 @@
 #define AST_MPFR_PREC 32
 #define AST_PARAMS_DEFAULT(ap) \
 	do { \
-		ap->precision = 3; \
-		ap->x_min = 0.0; \
-		ap->x_max = 10.0; \
-		ap->y_min = 0.0; \
-		ap->y_max = 10.0; \
-		ap->wrap = "$"; \
+		ap.precision = 3; \
+		ap.x_min = 0.0; \
+		ap.x_max = 10.0; \
+		ap.y_min = 0.0; \
+		ap.y_max = 10.0; \
+		ap.wrap = "$"; \
 	} while(0)
 
-typedef struct
+#define AKLASS(e) (e)->klass
+#define ANUM(e) (e)->p.num
+#define ABIF1K(e) (e)->p.bif1.klass
+#define ABIF1E(e) (e)->p.bif1.exp
+#define AOPK(e) (e)->p.op.klass
+#define AOPL(e) (e)->p.op.lexp
+#define AOPR(e) (e)->p.op.rexp
+#define AVARN(e) (e)->p.var.name
+#define AVARD(e) (e)->p.var.ds
+#define AEQLL(e) (e)->p.eql.lexp
+#define AEQLR(e) (e)->p.eql.rexp
+#define ADIFFE(e) (e)->p.diff.exp
+#define ADIFFB(e) (e)->p.diff.by
+
+typedef struct _a_params_t
 {
 	int precision;
 	double x_min;
@@ -31,11 +45,11 @@ typedef struct
 	char * wrap;
 } a_params_t;
 
-typedef enum
+typedef enum _a_actions_t
 {
-	AST_SHOW = 1,
-	AST_REDUCE = 2,
-	AST_DRAW = 4
+	AST_SHOW  	= 1 << 0,
+	AST_REDUCE	= 1 << 1,
+	AST_DRAW 	= 1 << 2
 } a_actions_t;
 
 typedef enum
@@ -73,48 +87,41 @@ typedef enum
 	AST_VAR
 } a_tt;
 
-typedef struct
+typedef struct _a_t
 {
 	a_tt klass;
 	bool negate;
-	void * p;
+	union
+	{
+		struct 
+		{
+			struct _a_t * exp;
+			u_slist_t * by;
+		} diff;
+		struct
+		{
+			a_bif1_tt klass;
+			struct _a_t * exp;
+		} bif1;
+		mpfr_t num;
+		struct 
+		{
+			a_op_tt klass;
+			struct _a_t * lexp;
+			struct _a_t * rexp;
+		} op;
+		struct
+		{
+			char * name;
+			u_slist_t * ds;
+		} var;
+		struct
+		{
+			struct _a_t * lexp;
+			struct _a_t * rexp;
+		} eql;
+	} p;
 } a_t;
-
-typedef struct
-{
-	a_t * exp;
-	slist_t * by;
-} a_diff_t;
-
-typedef struct
-{
-	a_bif1_tt klass;
-	a_t * exp;
-} a_bif1_t;
-
-typedef struct
-{
-	mpfr_t v;
-} a_numeric_t;
-
-typedef struct
-{
-	a_op_tt klass;
-	a_t * lexp;
-	a_t * rexp;
-} a_op_t;
-
-typedef struct
-{
-	char * name;
-	slist_t * ds;
-} a_var_t;
-
-typedef struct
-{
-	a_t * lexp;
-	a_t * rexp;
-} a_eql_t;
 
 typedef struct
 {
@@ -131,18 +138,10 @@ typedef struct
 	} p;
 } p_result_t;
 
-/**
- * ast_new(AST_NUMERIC, const char * s);
- * ast_new(AST_OP, ASTOpType t, AST * l, AST * r);
- * ast_new(AST_VAR, char * name, Strings * ldn);
- * ast_new(AST_BIF1, ASTBIFType1 t);
- * ast_new(AST_DIFF, AST * exp, Strings * by);
- * ast_new(AST_EQL, AST * a1, AST * a2);
- */
 a_t * 		a_new(a_tt, ...);
-void		a_show(a_t *, a_params_t *, FILE *);
+void		a_show(a_t *, a_params_t *);
 void		a_reduce(a_t *, a_params_t *);
-void		a_show_g(a_t *, a_params_t *, FILE *);
+void		a_show_g(a_t *, a_params_t *);
 void		a_delete(a_t *);
 a_t *		a_clone(const a_t *);
 u_stack_t *	a_iterate(a_t *);

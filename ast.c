@@ -17,55 +17,37 @@ a_t * a_new(a_tt klass, ...)
 	{
 		case AST_NUMERIC :
 		{
-			a_numeric_t * p = malloc(sizeof(*p));
-			assert( p != NULL );
-			mpfr_init2(p->v, AST_MPFR_PREC);
-			int r = mpfr_set_str(p->v, 
+			mpfr_init2(exp->p.num, AST_MPFR_PREC);
+			int r = mpfr_set_str(exp->p.num, 
 				va_arg(va, char *), 
 				10, GMP_RNDN);
 			assert( r == 0 );
-			exp->p = p;
 		} break;
 		case AST_BIF1 :
 		{
-			a_bif1_t * p = malloc(sizeof(*p));
-			assert( p != NULL );
-			p->klass = va_arg(va, a_bif1_tt);
-			p->exp = NULL;
-			exp->p = p;
+			exp->p.bif1.klass = va_arg(va, a_bif1_tt);
+			exp->p.bif1.exp = NULL;
 		} break;
 		case AST_VAR :
 		{
-			a_var_t * p = malloc(sizeof(*p));
-			assert( p != NULL );
-			p->name = va_arg(va, char *);
-			p->ds = va_arg(va, slist_t *);
-			exp->p = p;
+			exp->p.var.name = va_arg(va, char *);
+			exp->p.var.ds = va_arg(va, u_slist_t *);
 		} break;
 		case AST_OP :
 		{
-			a_op_t * p = malloc(sizeof(*p));
-			assert( p != NULL );
-			p->klass = va_arg(va, a_op_tt);
-			p->lexp = va_arg(va, a_t *);
-			p->rexp = va_arg(va, a_t *);
-			exp->p = p;
+			exp->p.op.klass = va_arg(va, a_op_tt);
+			exp->p.op.lexp = va_arg(va, a_t *);
+			exp->p.op.rexp = va_arg(va, a_t *);
 		} break;
 		case AST_EQL :
 		{
-			a_eql_t * p = malloc(sizeof(*p));
-			assert( p != NULL );
-			p->lexp = va_arg(va, a_t *);
-			p->rexp = va_arg(va, a_t *);
-			exp->p = p;
+			exp->p.eql.lexp = va_arg(va, a_t *);
+			exp->p.eql.rexp = va_arg(va, a_t *);
 		} break;
 		case AST_DIFF :
 		{
-			a_diff_t * p = malloc(sizeof(*p));
-			assert( p != NULL );
-			p->exp = va_arg(va, a_t *);
-			p->by = va_arg(va, slist_t *);
-			exp->p = p;
+			exp->p.diff.exp = va_arg(va, a_t *);
+			exp->p.diff.by = va_arg(va, u_slist_t *);
 		} break;
 		default : assert(0); break;
 	};
@@ -84,55 +66,37 @@ a_t * a_clone(const a_t * exp)
 	{
 		case AST_EQL :
 		{
-			a_eql_t * p = malloc(sizeof(*p));
-			assert( p != NULL );
-			p->lexp = a_clone(((a_eql_t *)(exp->p))->lexp);
-			p->rexp = a_clone(((a_eql_t *)(exp->p))->rexp);
-			exp1->p = p;
+			exp1->p.eql.lexp = a_clone(exp->p.eql.lexp);
+			exp1->p.eql.rexp = a_clone(exp->p.eql.rexp);
 		} break;
 		case AST_DIFF :
 		{
-			a_diff_t * p = malloc(sizeof(*p));
-			assert( p != NULL );
-			p->exp = a_clone(((a_diff_t *)(exp->p))->exp);
-			p->by = u_sl_clone(((a_diff_t *)(exp->p))->by);
-			exp1->p = p;
+			exp1->p.diff.exp = a_clone(exp->p.diff.exp);
+			exp1->p.diff.by = u_sl_clone(exp->p.diff.by);
 		} break;
 		case AST_NUMERIC :
 		{
-			a_numeric_t * p = malloc(sizeof(*p));
-			assert( p != NULL );
-			mpfr_init2(p->v, AST_MPFR_PREC);
-			int r = mpfr_set(p->v, ((a_numeric_t *)(exp->p))->v, 
+			mpfr_init2(exp1->p.num, AST_MPFR_PREC);
+			int r = mpfr_set(exp1->p.num, exp->p.num, 
 				GMP_RNDN);
 			assert( r == 0 );
-			exp1->p = p;
 		} break;
 		case AST_BIF1 :
 		{
-			a_bif1_t * p = malloc(sizeof(*p));
-			assert( p != NULL );
-			p->klass = ((a_bif1_t *)(exp->p))->klass;
-			p->exp = a_clone(((a_bif1_t *)(exp->p))->exp);
-			exp1->p = p;
+			exp1->p.bif1.klass = exp->p.bif1.klass;
+			exp1->p.bif1.exp = a_clone(exp->p.bif1.exp);
 		} break;
 		case AST_OP :
 		{
-			a_op_t * p = malloc(sizeof(*p));
-			assert( p != NULL );
-			p->klass = ((a_op_t *)(exp->p))->klass;
-			p->lexp = a_clone(((a_op_t *)(exp->p))->lexp);
-			p->rexp = a_clone(((a_op_t *)(exp->p))->rexp);
-			exp1->p = p;
+			exp1->p.op.klass = exp->p.op.klass;
+			exp1->p.op.lexp = a_clone(exp->p.op.lexp);
+			exp1->p.op.rexp = a_clone(exp->p.op.rexp);
 		} break;
 		case AST_VAR :
 		{
-			a_var_t * p = malloc(sizeof(*p));
-			assert( p != NULL );
-			p->name = strdup(((a_var_t *)(exp->p))->name);
-			assert( p->name != NULL );
-			p->ds = u_sl_clone(((a_var_t *)(exp->p))->ds);
-			exp1->p = p;
+			exp1->p.var.name = strdup(exp->p.var.name);
+			assert( exp1->p.var.name != NULL );
+			exp1->p.var.ds = u_sl_clone(exp->p.var.ds);
 		} break;
 		default : assert(0); break;
 	}
@@ -145,42 +109,41 @@ void a_delete(a_t * exp)
 	{
 		case AST_EQL :
 		{
-			a_delete(((a_eql_t *)(exp->p))->lexp);
-			a_delete(((a_eql_t *)(exp->p))->rexp);
+			a_delete(exp->p.eql.lexp);
+			a_delete(exp->p.eql.rexp);
 		} break;
 		case AST_DIFF :
 		{
-			a_delete(((a_diff_t *)(exp->p))->exp);
-			u_sl_delete(((a_diff_t *)(exp->p))->by);
+			a_delete(exp->p.diff.exp);
+			u_sl_delete(exp->p.diff.by);
 		} break;
 		case AST_NUMERIC :
 		{
-			mpfr_clear(((a_numeric_t *)(exp->p))->v);
+			mpfr_clear(exp->p.num);
 		} break;
 		case AST_BIF1 :
 		{
-			a_delete(((a_bif1_t *)(exp->p))->exp);
+			a_delete(exp->p.bif1.exp);
 		} break;
 		case AST_OP :
 		{
-			a_delete(((a_op_t *)(exp->p))->lexp);
-			a_delete(((a_op_t *)(exp->p))->rexp);
+			a_delete(exp->p.op.lexp);
+			a_delete(exp->p.op.rexp);
 		} break;
 		case AST_VAR :
 		{
-			free(((a_var_t *)(exp->p))->name);
-			u_sl_delete(((a_var_t *)(exp->p))->ds);
+			free(exp->p.var.name);
+			u_sl_delete(exp->p.var.ds);
 		} break;
 		default : assert(0); break;
 	}
-	free(exp->p);
 	free(exp);
 }
 
 u_stack_t * a_iterate(a_t * exp)
 {
 	u_stack_t * s = u_s_new();
-	queue_t * q = u_q_new();
+	u_queue_t * q = u_q_new();
 	u_q_push(q, exp);
 	while((exp = u_q_pop(q)) != NULL)
 	{
@@ -188,18 +151,18 @@ u_stack_t * a_iterate(a_t * exp)
 		switch(exp->klass)
 		{
 			case AST_EQL :
-				u_q_push(q, ((a_eql_t *)(exp->p))->rexp);
-				u_q_push(q, ((a_eql_t*)(exp->p))->lexp);
+				u_q_push(q, exp->p.eql.rexp);
+				u_q_push(q, exp->p.eql.lexp);
 				break;
 			case AST_BIF1 :
-				u_q_push(q, ((a_bif1_t *)(exp->p))->exp);
+				u_q_push(q, exp->p.bif1.exp);
 				break;
 			case AST_OP :
-				u_q_push(q, ((a_op_t *)(exp->p))->rexp);
-				u_q_push(q, ((a_op_t *)(exp->p))->lexp);
+				u_q_push(q, exp->p.op.rexp);
+				u_q_push(q, exp->p.op.lexp);
 				break;
 			case AST_DIFF :
-				u_q_push(q, ((a_diff_t *)(exp->p))->exp);
+				u_q_push(q, exp->p.diff.exp);
 				break;
 			default : 
 				break;

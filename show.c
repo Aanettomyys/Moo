@@ -8,85 +8,84 @@
 #include "ast.h"
 #include "utils.h"
 
-void a_show(a_t * exp, a_params_t * ap, FILE * out)
+extern FILE * yyin;
+extern FILE * yyout;
+
+void a_show(a_t * exp, a_params_t * ap)
 {
-	if(exp->negate) fprintf(out, "-");
-	switch(exp->klass)
+	if(exp->negate) fprintf(yyout, "-");
+	switch(AKLASS(exp))
 	{
 		case AST_NUMERIC :
-			mpfr_out_str(out, 10, ap->precision,
-				((a_numeric_t *)(exp->p))->v, GMP_RNDZ);
+			mpfr_out_str(yyout, 10, ap->precision, ANUM(exp), GMP_RNDZ);
 			break;
 		case AST_BIF1 :
-			switch(((a_bif1_t *)(exp->p))->klass)
+			switch(ABIF1K(exp))
 			{
-				case AST_BIF_SIN : fprintf(out, "\\sin"); break;
-				case AST_BIF_COS : fprintf(out, "\\cos"); break;
-				case AST_BIF_TAN : fprintf(out, "\\tan"); break;
-				case AST_BIF_ACOS : fprintf(out, "\\acos"); break;
-				case AST_BIF_ASIN : fprintf(out, "\\asin"); break;
-				case AST_BIF_ATAN : fprintf(out, "\\atan"); break;
-				case AST_BIF_COSH : fprintf(out, "\\cosh"); break;
-				case AST_BIF_SINH : fprintf(out, "\\sinh"); break;
-				case AST_BIF_TANH : fprintf(out, "\\tanh"); break;
-				case AST_BIF_ACOSH : fprintf(out, "\\acosh"); break;
-				case AST_BIF_ASINH : fprintf(out, "\\asinh"); break;
-				case AST_BIF_ATANH : fprintf(out, "\\atanh"); break;
+				case AST_BIF_SIN : fprintf(yyout, "\\sin"); break;
+				case AST_BIF_COS : fprintf(yyout, "\\cos"); break;
+				case AST_BIF_TAN : fprintf(yyout, "\\tan"); break;
+				case AST_BIF_ACOS : fprintf(yyout, "\\acos"); break;
+				case AST_BIF_ASIN : fprintf(yyout, "\\asin"); break;
+				case AST_BIF_ATAN : fprintf(yyout, "\\atan"); break;
+				case AST_BIF_COSH : fprintf(yyout, "\\cosh"); break;
+				case AST_BIF_SINH : fprintf(yyout, "\\sinh"); break;
+				case AST_BIF_TANH : fprintf(yyout, "\\tanh"); break;
+				case AST_BIF_ACOSH : fprintf(yyout, "\\acosh"); break;
+				case AST_BIF_ASINH : fprintf(yyout, "\\asinh"); break;
+				case AST_BIF_ATANH : fprintf(yyout, "\\atanh"); break;
 				default : assert(0); break;
 			}
-			fprintf(out, "(");
-			a_show(((a_bif1_t *)(exp->p))->exp, ap, out);
-			fprintf(out, ")");
+			fprintf(yyout, "(");
+			a_show(ABIF1E(exp), ap);
+			fprintf(yyout, ")");
 			break;
 		case AST_OP :
-			if(((a_op_t *)(exp->p))->klass != AST_OP_POW)
-				fprintf(out, "(");
-			a_show(((a_op_t *)(exp->p))->lexp, ap, out);
-			switch(((a_op_t *)(exp->p))->klass)
+			if(AOPK(exp) != AST_OP_POW)
+				fprintf(yyout, "(");
+			a_show(AOPL(exp), ap);
+			switch(AOPK(exp))
 			{
 				case AST_OP_ADD :
-					fprintf(out, " + "); break;
+					fprintf(yyout, " + "); break;
 				case AST_OP_SUB :
-					fprintf(out, " - "); break;
+					fprintf(yyout, " - "); break;
 				case AST_OP_MUL :
-					fprintf(out, " * "); break;
+					fprintf(yyout, " * "); break;
 				case AST_OP_DIV :
-					fprintf(out, " / "); break;
+					fprintf(yyout, " / "); break;
 				case AST_OP_POW :
-					fprintf(out, "^"); break;
+					fprintf(yyout, "^"); break;
 				default : assert(0); break;
 			};
-			if(((a_op_t *)(exp->p))->klass == AST_OP_POW)
-				fprintf(out, "{");
-			a_show(((a_op_t *)(exp->p))->rexp, ap, out);
-			if(((a_op_t *)(exp->p))->klass == AST_OP_POW)
-				fprintf(out, "}");
+			if(AOPK(exp) == AST_OP_POW)
+				fprintf(yyout, "{");
+			a_show(AOPR(exp), ap);
+			if(AOPK(exp) == AST_OP_POW)
+				fprintf(yyout, "}");
 			else
-				fprintf(out, ")");
+				fprintf(yyout, ")");
 			break;
 		case AST_VAR :
 		{
-			fprintf(out, ((a_var_t *)(exp->p))->name);
-			slist_t * sl = ((a_var_t *)(exp->p))->ds;
-			if(sl->size > 0)
+			fprintf(yyout, AVARN(exp));
+			if(AVARD(exp)->size > 0)
 			{
-				fprintf(out, "(");
-				for(size_t i = 0; i < sl->size; i++)
-				{
-					fprintf(out, "%s", sl->ss[i]);
-				}
-				fprintf(out, ")");
+				fprintf(yyout, "(");
+				for(size_t i = 0; i < AVARD(exp)->size; i++)
+					fprintf(yyout, "%s", AVARD(exp)->ss[i]);
+				fprintf(yyout, ")");
 			}
 		} break;
 		case AST_EQL :
-			a_show(((a_eql_t *)(exp->p))->lexp, ap, out);
-			fprintf(out, " = ");
-			a_show(((a_eql_t *)(exp->p))->rexp, ap, out);
+			a_show(AEQLL(exp), ap);
+			fprintf(yyout, " = ");
+			a_show(AEQLR(exp), ap);
 			break;
 		case AST_DIFF :
-			fprintf(out, "\\frac{\\mathrm{d}}"
-				"{\\mathrm{d}%s}", ((a_diff_t *)(exp->p))->by->ss[0]);
-			a_show(((a_diff_t *)(exp->p))->exp, ap, out);
+			fprintf(yyout, "\\frac{\\mathrm{d}}"
+				"{\\mathrm{d}%s}", ADIFFB(exp)->ss[0]);
+			a_show(ADIFFE(exp), ap);
 			break;
 		default : assert(0); break;
 	}
@@ -95,14 +94,13 @@ void a_show(a_t * exp, a_params_t * ap, FILE * out)
 static void a_show_g_(a_t * exp, a_params_t * ap, FILE * toplot)
 {
 	if(exp->negate) fprintf(toplot, "-");
-	switch(exp->klass)
+	switch(AKLASS(exp))
 	{
 		case AST_NUMERIC :
-			mpfr_out_str(toplot, 10, 
-				ap->precision, ((a_numeric_t *)(exp->p))->v, GMP_RNDZ);
+			mpfr_out_str(toplot, 10, ap->precision, ANUM(exp), GMP_RNDZ);
 			break;
 		case AST_BIF1 :
-			switch(((a_bif1_t *)(exp->p))->klass)
+			switch(ABIF1K(exp))
 			{
 				case AST_BIF_SIN : fprintf(toplot, "sin"); break;
 				case AST_BIF_COS : fprintf(toplot, "cos"); break;
@@ -119,13 +117,13 @@ static void a_show_g_(a_t * exp, a_params_t * ap, FILE * toplot)
 				default: assert(0); break;
 			};
 			fprintf(toplot, "(");
-			a_show_g_(((a_bif1_t *)(exp->p))->exp, ap, toplot);
+			a_show_g_(ABIF1E(exp), ap, toplot);
 			fprintf(toplot, ")");
 			break;
 		case AST_OP :
 			fprintf(toplot, "(");
-			a_show_g_(((a_op_t *)(exp->p))->lexp, ap, toplot);
-			switch(((a_op_t *)(exp->p))->klass)
+			a_show_g_(AOPL(exp), ap, toplot);
+			switch(AOPK(exp))
 			{
 				case AST_OP_ADD :
 					fprintf(toplot, " + ");
@@ -144,7 +142,7 @@ static void a_show_g_(a_t * exp, a_params_t * ap, FILE * toplot)
 					break;
 				default: assert(0); break;
 			};
-			a_show_g_(((a_op_t *)(exp->p))->rexp, ap, toplot);
+			a_show_g_(AOPR(exp), ap, toplot);
 			fprintf(toplot, ")");
 			break;
 		case AST_VAR :
@@ -154,43 +152,8 @@ static void a_show_g_(a_t * exp, a_params_t * ap, FILE * toplot)
 	};
 }
 
-void a_show_g(a_t * exp, a_params_t * ap, FILE * out)
+void a_show_g(a_t * exp, a_params_t * ap)
 {
-	u_stack_t * s = a_iterate(exp);
-	char * var = NULL;
-	a_t * i;
-	while((i = u_s_pop(s)) != NULL)
-	{
-		switch(i->klass)
-		{
-			case AST_EQL :
-				yyerror("Worker: Draw: Operator `='.");
-				exit(-1);
-				break;
-			case AST_VAR :
-			{
-				a_var_t * v = i->p;
-				if(v->ds->size > 0)
-				{
-					yyerror("Worker: Draw: Nonfree varable.");
-					exit(-1);
-				}
-				if(var == NULL)
-				{
-					var = strdup(v->name);
-					continue;
-				}
-				if(strcmp(var, v->name))
-				{
-					yyerror("Worker: Draw: More than one varable.");
-					exit(-1);
-				}
-			} break;
-			case AST_DIFF :
-				yyerror("Worker: Draw: Differential.");
-			default : break;
-		}
-	}
 	int to_plot[2];
 	int from_plot[2];
 	pipe(to_plot);
@@ -199,32 +162,39 @@ void a_show_g(a_t * exp, a_params_t * ap, FILE * out)
 	pid = fork();
 	if(pid == (pid_t) 0)
 	{
+		fclose(yyin);
+		fclose(yyout);
 		close(to_plot[1]);
 		close(from_plot[0]);
 		dup2(to_plot[0], STDIN_FILENO);
 		dup2(from_plot[1], STDOUT_FILENO);
 		execlp("gnuplot", "gnuplot", NULL);
-		yyerror("Worker: Cannot call `gnuplot'.");
+		perror("Moo: Cannot call `gnuplot'.\n");
 		exit(-1);
 	}
 	close(to_plot[0]);
 	close(from_plot[1]);
 	FILE * ftoplot = fdopen(to_plot[1], "w");
 	assert(ftoplot != NULL );
-	fprintf(ftoplot, "set terminal latex\n");
-	fprintf(ftoplot, "set format y \"$%%g$\"\n");
-	fprintf(ftoplot, "set format x \"$%%g$\"\n");
+	fprintf(ftoplot, 
+		"set terminal latex\n"
+		"set format y \"$%%g$\"\n"
+		"set format x \"$%%g$\"\n"
+		"set border 3\n"
+		"set xtics nomirror\n"
+		"set ytics nomirror\n"
+		"unset key\n");
 	fprintf(ftoplot, "plot [%lf:%lf] [%lf:%lf] ", 
 		ap->x_min, ap->x_max, ap->y_min, ap->y_max);
 	a_show_g_(exp, ap, ftoplot);
-	fprintf(ftoplot, "\nexit\n");
+	fprintf(ftoplot, " with lines\nexit\n");
 	fflush(ftoplot);
 	char b;
 	while(read(from_plot[0], &b, 1) == 1) 
 	{
-		fprintf(out, "%c", b);
+		fprintf(yyout, "%c", b);
 	}
-	fflush(stdout);
+	fflush(yyout);
 	waitpid(pid, NULL, 0);
 	close(to_plot[1]);
 	close(from_plot[0]);

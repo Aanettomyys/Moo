@@ -1,32 +1,21 @@
-#include <stdarg.h>
 #include <string.h>
 #include <assert.h>
 
 #include "ast.h"
 #include "utils.h"
 
-int yyerror(char *s, ...)
+u_slist_t * u_sl_new()
 {
-	va_list ap;
-	va_start(ap, s);
-	vfprintf(stderr, s, ap);
-	fprintf(stderr, "\n");
-	exit(-1);
-	return -1;
-}
-
-slist_t * u_sl_new()
-{
-	slist_t * sl = malloc(sizeof(*sl));
+	u_slist_t * sl = malloc(sizeof(*sl));
 	assert( sl != NULL );
 	sl->size = 0;
 	sl->ss = NULL;
 	return sl;
 }
 
-slist_t * u_sl_clone(slist_t * sl1)
+u_slist_t * u_sl_clone(u_slist_t * sl1)
 {
-	slist_t * sl2 = malloc(sizeof(*sl2));
+	u_slist_t * sl2 = malloc(sizeof(*sl2));
 	assert( sl2 != NULL );
 	sl2->size = sl1->size;
 	sl2->ss = malloc(sizeof(char *) * sl2->size);
@@ -39,7 +28,7 @@ slist_t * u_sl_clone(slist_t * sl1)
 	return sl2;
 }
 
-void u_sl_delete(slist_t * sl)
+void u_sl_delete(u_slist_t * sl)
 {
 	for(size_t i = 0; i < sl->size; i++)
 	{
@@ -50,7 +39,7 @@ void u_sl_delete(slist_t * sl)
 }
 
 
-void u_sl_append(slist_t * sl, char * s)
+void u_sl_append(u_slist_t * sl, char * s)
 {
 	sl->size++;
 	sl->ss = realloc(sl->ss, sl->size * sizeof(char *));
@@ -58,18 +47,18 @@ void u_sl_append(slist_t * sl, char * s)
 	sl->ss[sl->size - 1] = s;
 }
 
-queue_t * u_q_new()
+u_queue_t * u_q_new()
 {
-	queue_t * q = malloc(sizeof(*q));
+	u_queue_t * q = malloc(sizeof(*q));
 	assert( q != NULL );
 	q->head = NULL;
 	q->tail = NULL;
 	return q;
 }
 
-void u_q_push(queue_t * q, void * p)
+void u_q_push(u_queue_t * q, void * p)
 {
-	node_t * n = malloc(sizeof(*n));
+	u_node_t * n = malloc(sizeof(*n));
 	assert( n != NULL );
 	n->p = p;
 	n->next = NULL;
@@ -88,9 +77,9 @@ void u_q_push(queue_t * q, void * p)
 	}
 }
 
-void * u_q_pop(queue_t * q)
+void * u_q_pop(u_queue_t * q)
 {
-	node_t * n = q->head;
+	u_node_t * n = q->head;
 	if(n == NULL)
 		return NULL;
 	q->head = n->next;
@@ -111,7 +100,7 @@ u_stack_t * u_s_new()
 
 void u_s_push(u_stack_t * s, void * p)
 {
-	node_t * n = malloc(sizeof(*n));
+	u_node_t * n = malloc(sizeof(*n));
 	assert( n != NULL );
 	n->p = p;
 	n->next = s->head;
@@ -120,7 +109,7 @@ void u_s_push(u_stack_t * s, void * p)
 
 void * u_s_pop(u_stack_t * s)
 {
-	node_t * n = s->head;
+	u_node_t * n = s->head;
 	if(n == NULL)
 		return NULL;
 	s->head = n->next;

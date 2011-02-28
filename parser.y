@@ -1,18 +1,52 @@
 %{
 
 #include <string.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
 
-#include "parser_param.h"
 #include "ast.h"
 #include "utils.h"
 
+bool p_finish = false;
+a_params_t p_ap;
+u_queue_t * p_queue;
+a_actions_t actn;
+char * vname = NULL;
+enum {
+	P_PREC_SET = 1 << 0,
+	P_XMIN_SET = 1 << 1,
+	P_XMAX_SET = 1 << 2,
+	P_YMIN_SET = 1 << 3,
+	P_YMAX_SET = 1 << 4,
+	P_WRAP_SET = 1 << 5
+} p_param_ck;
+
+#include "parser.h"
+
+int lyyerror(YYLTYPE t, char * s, ...);
+int yyerror(char * s, ...);
+extern int yylex();
+
 %}
 
+%union
+{
+	a_t * exp;
+	char * word;
+	u_slist_t * ldn;
+	a_actions_t actn;
+}
+
+%initial-action{
+	AST_PARAMS_DEFAULT(p_ap);
+	p_param_ck = 0;
+	actn = 0;
+	if(vname != NULL) free(vname);
+}
+
 %locations
-%pure_parser
 %defines "parser.h"
 %output "parser.c"
 
@@ -44,7 +78,7 @@
 
 all:	|	ENDOFFILE 
 		{
-			((p_param_t *)data)->finish = true;
+			p_finish = true;
 			YYACCEPT;
 		}
 	|	TEXT
@@ -53,7 +87,7 @@ all:	|	ENDOFFILE
 			assert( pr != NULL );
 			pr->is_ast = false;
 			pr->p.text = $<word>1;
-			u_q_push(((p_param_t  *)data)->q, pr);
+			u_q_push(p_queue, pr);
 			YYACCEPT;
 		} 
 	|	parsable 
@@ -69,11 +103,8 @@ parsable:	ENTRY actions params expression
 			pr->p.ast.actn = $<actn>2;
 			pr->p.ast.ap = malloc(sizeof(*(pr->p.ast.ap)));
 			assert( pr->p.ast.ap != NULL );
-			memcpy(pr->p.ast.ap, 
-				((p_param_t *)data)->ap, 
-				sizeof(*(pr->p.ast.ap)));
-			AST_PARAMS_DEFAULT(((p_param_t *)data)->ap);
-			u_q_push(((p_param_t *)data)->q, pr);
+			memcpy(pr->p.ast.ap, &p_ap, sizeof(p_ap));
+			u_q_push(p_queue, pr);
 		}
 	;
 actions:	ACTN_BEGIN action_list ACTN_END 
@@ -88,10 +119,7 @@ action_list:	ACTN_ACTION
 	|	action_list ACTN_SEP ACTN_ACTION
 		{
 			if($<actn>3 & $<actn>1)
-			{
-				yyerror("Duplicate actions.");
-				YYABORT;
-			}
+				lyyerror(@3, "duplicate actions.");
 			$<actn>$ = ($<actn>3 | $<actn>1); 
 		} 
 	;
@@ -104,91 +132,84 @@ param_list:	/* empty */
 	;
 param:		P_PRECISION PRMS_SET PRMS_VAL
 		{
+			if(p_param_ck & P_PREC_SET)
+				lyyerror(@1, "precision already set.");
+			else
+				p_param_ck |= P_PREC_SET;
 			int prec = -1;
-			if(sscanf($<word>3, "%d", 
-				&prec) != 1 || prec <= 0)
-			{
-				yyerror("at %d:%d - %d:%d: Wrong precision.", 
-					@3.first_line,
-					@3.first_column,
-					@3.last_line,
-					@3.last_column);
-				exit(-1);
-			}
-			((p_param_t *)data)->ap->precision = prec;
+			if(sscanf($<word>3, "%d", &prec) != 1 || prec <= 0)
+				lyyerror(@3, "wrong precision."); 
+			p_ap.precision = prec;
 			free($<word>3);
 		}
 	|	P_XMIN PRMS_SET PRMS_VAL
 		{
+			if(p_param_ck & P_XMIN_SET)
+				lyyerror(@1, "`xmin' already set.");
+			else
+				p_param_ck |= P_XMIN_SET;
 			double xmin;
 			if(sscanf($<word>3, "%lf", &xmin) != 1)
-			{
-				yyerror("at %d:%d - %d:%d: Wrong value of `xmin'.", 
-					@3.first_line,
-					@3.first_column,
-					@3.last_line,
-					@3.last_column);
-				exit(-1);
-			}
-			((p_param_t *)data)->ap->x_min = xmin;
+				lyyerror(@3, "wrong value of `xmin'."); 
+			p_ap.x_min = xmin;
 			free($<word>3);
 		}
 	|	P_XMAX PRMS_SET PRMS_VAL
 		{
+			if(p_param_ck & P_XMAX_SET)
+				lyyerror(@1, "`xmax' already set.");
+			else
+				p_param_ck |= P_XMAX_SET;
 			double xmax;
 			if(sscanf($<word>3, "%lf", &xmax) != 1)
-			{
-				yyerror("at %d:%d - %d:%d: Wrong value of `xmax'.", 
-					@3.first_line,
-					@3.first_column,
-					@3.last_line,
-					@3.last_column);
-				exit(-1);
-			}
-			((p_param_t *)data)->ap->x_max = xmax;
+				lyyerror(@3, "wrong value of `xmax'."); 
+			p_ap.x_max = xmax;
 			free($<word>3);
 		}
 	|	P_YMIN PRMS_SET PRMS_VAL
 		{
+			if(p_param_ck & P_YMIN_SET)
+				lyyerror(@1, "`ymin' already set.");
+			else
+				p_param_ck |= P_YMIN_SET;
 			double ymin;
 			if(sscanf($<word>3, "%lf", &ymin) != 1)
-			{
-				yyerror("at %d:%d - %d:%d: Wrong value of `ymin'.", 
-					@3.first_line,
-					@3.first_column,
-					@3.last_line,
-					@3.last_column);
-				exit(-1);
-			}
-			((p_param_t *)data)->ap->y_min = ymin;
+				lyyerror(@3, "wrong value of `ymin'."); 
+			p_ap.y_min = ymin;
 			free($<word>3);
 		}	
 	|	P_YMAX PRMS_SET PRMS_VAL
 		{
+			if(p_param_ck & P_YMAX_SET)
+				lyyerror(@1, "`ymax' already set.");
+			else
+				p_param_ck |= P_YMAX_SET;
 			double ymax;
 			if(sscanf($<word>3, "%lf", &ymax) != 1)
-			{
-				yyerror("at %d:%d - %d:%d: Wrong value of `ymax'.", 
-					@3.first_line,
-					@3.first_column,
-					@3.last_line,
-					@3.last_column);
-				exit(-1);
-			}
-			((p_param_t *)data)->ap->y_max = ymax;
+				lyyerror(@3, "wrong value of `ymax'.");
+			p_ap.y_max = ymax;
 			free($<word>3);
 		}
 	|	P_WRAP PRMS_SET P_WRAP_1
 		{
-			((p_param_t *)data)->ap->wrap = "$";
+			if(p_param_ck & P_WRAP_SET)
+				lyyerror(@1, "`wrap' already set.");
+			else
+				p_param_ck |= P_WRAP_SET;
+			p_ap.wrap = "$";
 		}
 	|	P_WRAP PRMS_SET P_WRAP_2
 		{
-			((p_param_t *)data)->ap->wrap = "$$";
+			if(p_param_ck & P_WRAP_SET)
+				lyyerror(@1, "`wrap' already set.");
+			else
+				p_param_ck |= P_WRAP_SET;
+			p_ap.wrap = "$$";
 		}
 	;
 expression:	EXPR_BEG expr_eq EXPR_END 
 		{ 
+			if(actn & AST_DRAW) lyyerror(@2, "`=' in graph.");
 			$<exp>$ = $<exp>2; 
 		}
 	|	EXPR_BEG expr EXPR_END 
@@ -248,12 +269,13 @@ expr:		expr EXPR_ADD expr
 		}
 	|	EXPR_BIF1 EXPR_LBR expr EXPR_RBR 
 		{ 
-			((a_bif1_t *)($<exp>1->p))->exp = $<exp>3;
+			ABIF1E($<exp>1) = $<exp>3;
 			$<exp>$ = $<exp>1; 
 		}
 	|	EXPR_DIFF EXPR_VAR expr %prec EXPR_DIFF
 		{
-			slist_t * sl = u_sl_new();
+			if(actn & AST_DRAW) lyyerror(@1, "differential in grap.");
+			u_slist_t * sl = u_sl_new();
 			u_sl_append(sl, $<word>2);
 			$<exp>$ = a_new(AST_DIFF, $<exp>3, sl);
 		}
@@ -261,10 +283,18 @@ expr:		expr EXPR_ADD expr
 
 var:		EXPR_VAR EXPR_LBR var_depends EXPR_RBR 
 		{ 
+			if(actn & AST_DRAW) lyyerror(@2, "nonfree varable in graph.");
 			$<exp>$ = a_new(AST_VAR, $<word>1, $<ldn>3); 
 		}
 	|	EXPR_VAR 
-		{ 
+		{
+			if(actn & AST_DRAW)
+			{
+				if(vname != NULL && strcmp(vname, $<word>1))
+					lyyerror(@1, "no unique varable in graph.");
+				else if(vname == NULL)
+					vname = strdup($<word>1);
+			}
 			$<exp>$ = a_new(AST_VAR, $<word>1, u_sl_new()); 
 		}
 	;
@@ -281,3 +311,27 @@ var_depends:	EXPR_VAR
 		}
 	;
 %%
+
+int lyyerror(YYLTYPE t, char * s, ...)
+{
+	va_list va;
+	va_start(va, s);
+	fprintf(stderr, "Error at line %d: ",
+		t.first_line);
+	vfprintf(stderr, s, va);
+	fprintf(stderr, "\n");
+	va_end(va);
+	exit(-1);
+}
+
+int yyerror(char * s, ...)
+{
+	va_list va;
+	va_start(va, s);
+	fprintf(stderr, "Error at line %d: ",
+		yylloc.first_line);
+	vfprintf(stderr, s, va);
+	fprintf(stderr, "\n");
+	va_end(va);
+	exit(-1);
+}
