@@ -641,7 +641,7 @@ static void Integer_showTex(const void * _self,
 	const struct Integer * self = cast(_self, Integer());
 	if(reversed(_self))
 	{
-		fprintf(yyout, "\\frac{1}{");		
+		fprintf(yyout, "\\dfrac{1}{");		
 		mpz_out_str(yyout, 10, self->x);
 		fprintf(yyout, "}");
 	}
@@ -801,7 +801,7 @@ static void Real_showTex(const void * _self, OutParams * _op)
 	const struct Real * self = cast(_self, Real());
 	if(reversed(_self))
 	{
-		fprintf(yyout, "\\frac{1}{");
+		fprintf(yyout, "\\dfrac{1}{");
 		mpfr_out_str(yyout, 10, _op->precision,	
 			self->x, GMP_RNDZ);
 		fprintf(yyout, "}");
@@ -1040,6 +1040,12 @@ void * argv(const void * _self, const size_t i)
 	return self->argv[i];
 }
 
+size_t size(const void * _self)
+{
+	struct Combinator * self = cast(_self, Combinator());
+	return self->argc;
+}
+
 void * setArgv(void * _self, const size_t i, void * _arg)
 {
 	struct Combinator * self = cast(_self, Combinator());
@@ -1110,7 +1116,7 @@ static void Sum_showTex(const void * _self, OutParams * _op)
 	const struct Combinator * self = cast(_self, Combinator());
 	size_t i;
 	assert(self->argc > 1);
-	if(reversed(_self)) fprintf(yyout, "\\frac{1}{");
+	if(reversed(_self)) fprintf(yyout, "\\dfrac{1}{");
 	for(i = 0; i < self->argc; ++i)
 	{
 		if(negated(self->argv[i]) &&
@@ -1206,7 +1212,7 @@ static void Product_showTex(const void * _self, OutParams * _op)
 	const struct Combinator * self = cast(_self, Combinator());
 	size_t i;
 	assert(self->argc > 1);
-	if(reversed(_self)) fprintf(yyout, "\\frac{1}{");
+	if(reversed(_self)) fprintf(yyout, "\\dfrac{1}{");
 	for(i = 0; i < self->argc; ++i)
 	{
 		if(i) fprintf(yyout, " * ");
@@ -1322,7 +1328,7 @@ static void Pow_showTex(const void * _self, OutParams * _app)
 		isOf(self->base, Combinator()))
 		fprintf(yyout, "(");
 	if(negated(_self)) fprintf(yyout, "-");
-	if(reversed(_self)) fprintf(yyout, "\\frac{1}{");
+	if(reversed(_self)) fprintf(yyout, "\\dfrac{1}{");
 	if(negated(self->base) && !isA(self->base, Pow()))
 		fprintf(yyout, "-");
 	showTex(self->base, _app);
@@ -1408,7 +1414,7 @@ static void * Pow_dtor(void * _self)
 
 /*************************** Properties **********************************/
 
-void * power(void * _self)
+void * power(const void * _self)
 {
 	struct Pow * self = cast(_self, Pow());
 	return self->power;
@@ -1421,7 +1427,7 @@ void setPower(void * _self, void * _power)
 	self->power = power;
 }
 
-void * base(void * _self)
+void * base(const void * _self)
 {
 	struct Pow * self = cast(_self, Pow());
 	return self->base;
@@ -1468,7 +1474,7 @@ struct Sin
 static void Sin_showTex(const void * _self, OutParams * _op)
 {
 	const struct Apply_1 * self = cast(_self, Apply_1());
-	if(reversed(_self)) fprintf(yyout, "\\frac{1}{");
+	if(reversed(_self)) fprintf(yyout, "\\dfrac{1}{");
 	fprintf(yyout, "\\sin(");
 	if(negated(self->arg) && !isA(self->arg, Pow()))
 		fprintf(yyout, "-");
@@ -1532,7 +1538,7 @@ struct Cos
 static void Cos_showTex(const void * _self, OutParams * _op)
 {
 	const struct Apply_1 * self = cast(_self, Apply_1());
-	if(reversed(_self)) fprintf(yyout, "\\frac{1}{");
+	if(reversed(_self)) fprintf(yyout, "\\dfrac{1}{");
 	fprintf(yyout, "\\cos(");
 	if(negated(self->arg) && !isA(self->arg, Pow()))
 		fprintf(yyout, "-");
@@ -1596,7 +1602,7 @@ struct Tan
 static void Tan_showTex(const void * _self, OutParams * _op)
 {
 	const struct Apply_1 * self = cast(_self, Apply_1());
-	if(reversed(_self)) fprintf(yyout, "\\frac{1}{");
+	if(reversed(_self)) fprintf(yyout, "\\dfrac{1}{");
 	fprintf(yyout, "\\tan(");
 	if(negated(self->arg) && !isA(self->arg, Pow()))
 		fprintf(yyout, "-");
@@ -1665,7 +1671,7 @@ struct Ln
 static void Ln_showTex(const void * _self, OutParams * _op)
 {
 	const struct Apply_1 * self = cast(_self, Apply_1());
-	if(reversed(_self)) fprintf(yyout, "\\frac{1}{");
+	if(reversed(_self)) fprintf(yyout, "\\dfrac{1}{");
 	fprintf(yyout, "\\ln(");
 	if(negated(self->arg) && !isA(self->arg, Pow()))
 		fprintf(yyout, "-");
@@ -1728,7 +1734,7 @@ static void Var_showTex(const void * _self,
 	OutParams * _op __attribute__((unused)))
 {
 	const struct Var * self = cast(_self, Var());
-	if(reversed(_self)) fprintf(yyout, "\\frac{1}{");
+	if(reversed(_self)) fprintf(yyout, "\\dfrac{1}{");
 	fprintf(yyout, "%s", self->name);
 	if(reversed(_self)) fprintf(yyout, "}");
 }
@@ -1890,9 +1896,9 @@ static void Diff_showTex(const void * _self, OutParams * _op)
 	const struct Diff * self = cast(_self, Diff());
 	const struct Apply_1 * self_1 = cast(_self, Apply_1());
 	size_t i;
-	if(reversed(_self)) fprintf(yyout, "\\frac{1}{");
-	if(self->diffp == 1) fprintf(yyout, "\\frac{\\mathrm{d}");
-	else fprintf(yyout, "\\frac{\\partial ^{%lu}", 
+	if(reversed(_self)) fprintf(yyout, "\\dfrac{1}{");
+	if(self->diffp == 1) fprintf(yyout, "\\dfrac{\\mathrm{d}");
+	else fprintf(yyout, "\\dfrac{\\partial ^{%lu}", 
 		(unsigned long) self->diffp);
 	if(negated(self_1->arg) && !isA(self_1->arg, Pow()))
 		fprintf(yyout, "-");
@@ -1903,7 +1909,7 @@ static void Diff_showTex(const void * _self, OutParams * _op)
 	else
 	{
 		for(i = 0; i < self->diffp; ++i)
-			fprintf(yyout, "\\partial%s", self->by[i]);
+			fprintf(yyout, "\\partial %s", self->by[i]);
 		fprintf(yyout, "}");
 	}
 	if(reversed(_self)) fprintf(yyout, "}");
@@ -1942,6 +1948,21 @@ void diffBy(void * _self, const char * _by)
 	self->diffp++;
 	self->by = realloc(self->by, self->diffp * sizeof(char *));
 	self->by[self->diffp - 1] = strdup(_by);
+}
+
+void * diffExec(const void * _self)
+{
+	const struct Diff * self = cast(_self, Diff());
+	const struct Apply_1 * self_1 = cast(_self, Apply_1());
+	void * _copy = copy(self_1->arg);
+	size_t i;
+	for(i = 0; i < self->diffp; ++i)
+	{
+		void * _copy_2 = derive(_copy, self->by[i]);
+		delete(_copy);
+		_copy = _copy_2;
+	}
+	return _copy;
 }
 
 
@@ -2011,7 +2032,7 @@ static void Function_showTex(const void * _self, OutParams * _op)
 {
 	const struct Apply_1 * self = cast(_self, Apply_1());
 	const struct Function * selff = cast(_self, Function());
-	if(reversed(_self)) fprintf(yyout, "\\frac{1}{");
+	if(reversed(_self)) fprintf(yyout, "\\dfrac{1}{");
 	fprintf(yyout, "%s(", selff->name);
 	if(negated(self->arg) && !isA(self->arg, Pow()))
 		fprintf(yyout, "-");

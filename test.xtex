@@ -1,6 +1,8 @@
 \documentclass{article}
+\usepackage{amsmath}
 \begin{document}
 
-@@<reduce, show>{ diff x diff y x + y }
-@@<draw>{ x + 1 * x }
+@@<show>[wrap=$] { diff x diff y -x * - y }
+@@<reduce, show>[wrap=$] Integer { diff x diff y -x * - y }
+
 \end{document}

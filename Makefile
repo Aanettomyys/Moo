@@ -1,5 +1,5 @@
 CFLAGS	= -O0 -g -Wall -Wextra -W -pedantic
-SOURCES	=lexer.c parser.c main.c ast.c
+SOURCES	=lexer.c parser.c main.c ast.c reduce.c
 OBJECTS	= $(SOURCES:.c=.o)
 LDFLAGS	= -lmpfr -lgmp
 

@@ -32,6 +32,8 @@ REAL	[0-9]*\.?[0-9]+
 }
 <common>{
 	{WS}		/* eat */
+	"Real"		return DOM_REAL;
+	"Integer"	return DOM_INTEGER;
 	"<"		BEGIN(actions); return ACTN_BEGIN;
 	"["		BEGIN(params); return PRMS_BEG;
 	"{"		BEGIN(expression); return EXPR_BEG;

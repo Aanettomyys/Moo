@@ -102,6 +102,7 @@ void setArg(void * _self, void * _arg);
 const void * Combinator(void);
 /* Props */
 void * argv(const void * _self, const size_t i);
+size_t size(const void * _self);
 void * setArgv(void * _self, const size_t i, void * _arg);
 
 
@@ -110,9 +111,9 @@ const void * Product(void);
 
 const void * Pow(void);
 /* Props */
-void * power(void * _self);
+void * power(const void * _self);
 void setPower(void * _self, void * _power);
-void * base(void * _self);
+void * base(const void * _self);
 void setBase(void * _self, void * _base);
 
 const void * Ln(void);
@@ -127,9 +128,12 @@ void setName(void * _self, char * _name);
 
 const void * Diff(void);
 void diffBy(void * _self, const char * _by);
+void * diffExec(const void * _self);
 
 const void * Function(void);
 const char * fname(const void * _self);
 void setFName(void * _self, char * _name);
 
+void * reduce_phase1(const void * _exp);
+void * reduce_phase2(const void * _exp);
 #endif

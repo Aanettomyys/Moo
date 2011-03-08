@@ -24,6 +24,11 @@ enum {
 	P_WRAP_SET = 1 << 5
 } paramCk;
 
+enum {
+	REAL,
+	INTEGER
+} domain;
+
 Actions actions;
 
 #include "parser.h"
@@ -46,6 +51,7 @@ extern FILE * yyout;
 	PARAMS_DEFAULT(op);
 	paramCk = 0;
 	actions = 0;
+	domain = REAL;
 }
 
 %locations
@@ -56,6 +62,7 @@ extern FILE * yyout;
 %token ACTN_BEGIN ACTN_ACTION ACTN_SEP ACTN_END
 %token PRMS_BEG PRMS_SEP PRMS_SET PRMS_VAL PRMS_END
 %token EXPR_BEG EXPR_END EXPR_LBR EXPR_RBR EXPR_SEP
+%token DOM_REAL DOM_INTEGER
 
 %token P_PRECISION
 %token P_XMIN P_XMAX
@@ -90,21 +97,33 @@ all:	|	ENDOFFILE
 			YYACCEPT;
 		}
 	;
-parsable:	ENTRY actions params expression 
+parsable:	ENTRY actions params domain expression 
 		{ 
+			if(actions & REDUCE)
+			{
+				void * reduced = reduce_phase1($<p>5);
+				if(domain == REAL)
+				{
+					void * domProp = reduce_phase2(reduced);
+					delete(reduced);
+					reduced = domProp;
+				}
+				delete($<p>5);
+				$<p>5 = reduced;
+			}
 			if(actions & SHOW)
 			{
 				fprintf(yyout, "%s", op.wrap);
-				if(negated($<p>4) && !isA($<p>4, Pow()))
+				if(negated($<p>5) && !isA($<p>5, Pow()))
 					fprintf(yyout, "-");
-				showTex($<p>4, &op);
+				showTex($<p>5, &op);
 				fprintf(yyout, "%s", op.wrap);
 			}
 			if(actions & DRAW)
 			{
-				fflush(yyout);
 				int to_plot[2];
 				int from_plot[2];
+				fflush(yyout);
 				fprintf(yyout, "\n\n");
 				pipe(to_plot);
 				pipe(from_plot);
@@ -138,7 +157,7 @@ parsable:	ENTRY actions params expression
 					fprintf(ftoplot, "plot [%f:%f] [%f:%f] ", 
 						(float)op.x_min, (float)op.x_max, 
 						(float)op.y_min, (float)op.y_max);
-					showPlot($<p>4, ftoplot, &op);
+					showPlot($<p>5, ftoplot, &op);
 					fprintf(ftoplot, " with lines\nexit\n");
 					fflush(ftoplot);
 					while(read(from_plot[0], &b, 1) == 1) 
@@ -150,9 +169,12 @@ parsable:	ENTRY actions params expression
 					fprintf(yyout, "\n\n");
 				}
 			}
-			delete($<p>4);
+			delete($<p>5);
 		}
 	;
+domain:		/* REAL domain */
+	|	DOM_REAL { domain = REAL; }
+	|	DOM_INTEGER { domain = INTEGER; }
 actions:	ACTN_BEGIN action_list ACTN_END {}
 	;
 action_list:	ACTN_ACTION 
@@ -352,10 +374,18 @@ expr:		expr EXPR_ADD expr
 		}
 	|	EXPR_INT
 		{ 
-			$<p>$ = $<p>1; 
+			if(domain == REAL)
+			{
+				$<p>$ = domainCast($<p>1, Real());
+				delete($<p>1);
+			}
+			else
+				$<p>$ = $<p>1; 
 		}
 	|	EXPR_REAL
 		{
+			if(domain == INTEGER) lyyerror(@1, 
+				"real number in integer domain");
 			$<p>$ = $<p>1;
 		}
 	|	EXPR_BIF1 EXPR_LBR expr EXPR_RBR 
@@ -365,15 +395,25 @@ expr:		expr EXPR_ADD expr
 		}
 	|	EXPR_DIFF EXPR_VAR expr %prec EXPR_DIFF
 		{
-			if(actions & DRAW) lyyerror(@1, "differential in graphic.");
-			$<p>$ = new(Diff());
-			setArg($<p>$, $<p>3);
-			diffBy($<p>$, $<p>2);
+			if(actions & DRAW) lyyerror(@1, 
+				"differential in graphic.");
+			if(isA($<p>3, Diff()))
+			{
+				diffBy($<p>3, $<p>2);
+				$<p>$ = $<p>3;
+			}
+			else
+			{
+				$<p>$ = new(Diff());
+				setArg($<p>$, $<p>3);
+				diffBy($<p>$, $<p>2);
+			}
 			free($<p>2);
 		}
 	|	EXPR_VAR EXPR_LBR expr EXPR_RBR 
 		{ 
-			if(actions & DRAW) lyyerror(@2, "nonfree varable in graphic.");
+			if(actions & DRAW) lyyerror(@2, 
+				"nonfree varable in graphic.");
 			$<p>$ = new(Var());
 			setFName($<p>$, $<p>1);
 			setArg($<p>$, $<p>3);
