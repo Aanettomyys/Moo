@@ -2,7 +2,7 @@
 \usepackage{amsmath}
 \begin{document}
 
-@@<show>[wrap=$] { diff x diff y -x * - y }
+@@<show>[wrap=$] { diff x diff y -x * - y(x) + x(z) }
 @@<reduce, show>[wrap=$] Integer { diff x diff y -x * - y }
 
 \end{document}

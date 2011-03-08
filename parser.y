@@ -39,6 +39,15 @@ extern int yylex();
 extern FILE * yyin;
 extern FILE * yyout;
 
+
+struct
+{
+	char * name;
+	const void * class;
+} * varTable;
+size_t varTableSize;
+
+
 %}
 
 %union
@@ -48,10 +57,18 @@ extern FILE * yyout;
 }
 
 %initial-action{
+	size_t i;
 	PARAMS_DEFAULT(op);
 	paramCk = 0;
 	actions = 0;
 	domain = REAL;
+	for(i = 0; i < varTableSize; ++i)
+	{
+		free(varTable[i].name);
+	}
+	free(varTable);
+	varTable = NULL;
+	varTableSize = 0;
 }
 
 %locations
@@ -412,14 +429,42 @@ expr:		expr EXPR_ADD expr
 		}
 	|	EXPR_VAR EXPR_LBR expr EXPR_RBR 
 		{ 
+			size_t i;
+			for(i = 0; i < varTableSize; ++i)
+				if(!strcmp($<p>1, varTable[i].name) && 
+					varTable[i].class != Function())
+					lyyerror(@1, "different class for varable `%s'",
+						varTable[i].name);
+			if(i == varTableSize)
+			{
+				varTableSize++;
+				varTable = realloc(varTable, varTableSize * sizeof(*varTable));
+				varTable[varTableSize - 1].name = strdup($<p>1);
+				varTable[varTableSize - 1].class = Function();
+			}
 			if(actions & DRAW) lyyerror(@2, 
 				"nonfree varable in graphic.");
-			$<p>$ = new(Var());
+			$<p>$ = new(Function());
 			setFName($<p>$, $<p>1);
 			setArg($<p>$, $<p>3);
 		}
 	|	EXPR_VAR 
 		{
+			size_t i;
+			for(i = 0; i < varTableSize; ++i)
+				if(!strcmp($<p>1, varTable[i].name) && 
+					varTable[i].class != Var())
+					lyyerror(@1, "different class for varable `%s'",
+						varTable[i].name);
+			if(i == varTableSize)
+			{
+				varTableSize++;
+				varTable = realloc(varTable, varTableSize * sizeof(*varTable));
+				varTable[varTableSize - 1].name = strdup($<p>1);
+				varTable[varTableSize - 1].class = Var();
+			}
+			if(varTableSize > 1 && (actions & DRAW))
+				lyyerror(@1, "more than one varable for graphic");
 			$<p>$ = new(Var());
 			setName($<p>$, $<p>1);
 		}
