@@ -5,15 +5,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
 
 #include "ast.h"
-#include "utils.h"
+/*#include "utils.h"*/
 
-bool p_finish = false;
-a_params_t p_ap;
-u_queue_t * p_queue;
-a_actions_t actn;
-char * vname = NULL;
+int finish = 0;
+OutParams op;
+
 enum {
 	P_PREC_SET = 1 << 0,
 	P_XMIN_SET = 1 << 1,
@@ -21,29 +22,30 @@ enum {
 	P_YMIN_SET = 1 << 3,
 	P_YMAX_SET = 1 << 4,
 	P_WRAP_SET = 1 << 5
-} p_param_ck;
+} paramCk;
+
+Actions actions;
 
 #include "parser.h"
 
 int lyyerror(YYLTYPE t, char * s, ...);
 int yyerror(char * s, ...);
 extern int yylex();
+extern FILE * yyin;
+extern FILE * yyout;
 
 %}
 
 %union
 {
-	a_t * exp;
-	char * word;
-	u_slist_t * ldn;
-	a_actions_t actn;
+	void * p;
+	Actions a;
 }
 
 %initial-action{
-	AST_PARAMS_DEFAULT(p_ap);
-	p_param_ck = 0;
-	actn = 0;
-	if(vname != NULL) free(vname);
+	PARAMS_DEFAULT(op);
+	paramCk = 0;
+	actions = 0;
 }
 
 %locations
@@ -55,15 +57,11 @@ extern int yylex();
 %token PRMS_BEG PRMS_SEP PRMS_SET PRMS_VAL PRMS_END
 %token EXPR_BEG EXPR_END EXPR_LBR EXPR_RBR EXPR_SEP
 
-/*
-	Parametrs
-*/
 %token P_PRECISION
 %token P_XMIN P_XMAX
 %token P_WRAP P_WRAP_1 P_WRAP_2
 %token P_YMIN P_YMAX
 
-%left EXPR_EQL
 %left EXPR_DIFF
 %left EXPR_ADD EXPR_SUB
 %left EXPR_DIF
@@ -72,22 +70,19 @@ extern int yylex();
 %right EXPR_POW
 
 %token EXPR_BIF1
-%token EXPR_VAR EXPR_NUM
+%token EXPR_VAR EXPR_INT EXPR_REAL
 
 %%
 
 all:	|	ENDOFFILE 
 		{
-			p_finish = true;
+			finish = 1;
 			YYACCEPT;
 		}
 	|	TEXT
 		{ 
-			p_result_t * pr = malloc(sizeof(*pr));
-			assert( pr != NULL );
-			pr->is_ast = false;
-			pr->p.text = $<word>1;
-			u_q_push(p_queue, pr);
+			fprintf(yyout, "%s", (char *)$<p>1);
+			free($<p>1);
 			YYACCEPT;
 		} 
 	|	parsable 
@@ -97,30 +92,78 @@ all:	|	ENDOFFILE
 	;
 parsable:	ENTRY actions params expression 
 		{ 
-			p_result_t * pr = malloc(sizeof(*pr));
-			pr->is_ast = true;
-			pr->p.ast.exp = $<exp>4;
-			pr->p.ast.actn = $<actn>2;
-			pr->p.ast.ap = malloc(sizeof(*(pr->p.ast.ap)));
-			assert( pr->p.ast.ap != NULL );
-			memcpy(pr->p.ast.ap, &p_ap, sizeof(p_ap));
-			u_q_push(p_queue, pr);
+			if(actions & SHOW)
+			{
+				fprintf(yyout, "%s", op.wrap);
+				if(negated($<p>4) && !isA($<p>4, Pow()))
+					fprintf(yyout, "-");
+				showTex($<p>4, &op);
+				fprintf(yyout, "%s", op.wrap);
+			}
+			if(actions & DRAW)
+			{
+				fflush(yyout);
+				int to_plot[2];
+				int from_plot[2];
+				fprintf(yyout, "\n\n");
+				pipe(to_plot);
+				pipe(from_plot);
+				if(fork() == (pid_t) 0)
+				{
+					fclose(yyin);
+					fclose(yyout);
+					close(to_plot[1]);
+					close(from_plot[0]);
+					dup2(to_plot[0], STDIN_FILENO);
+					dup2(from_plot[1], STDOUT_FILENO);
+					execlp("gnuplot", "gnuplot", NULL);
+					perror("Moo: Cannot call `gnuplot'.\n");
+					exit(-1);
+				}
+				else
+				{
+					FILE * ftoplot = fdopen(to_plot[1], "w");
+					char b;
+					close(to_plot[0]);
+					close(from_plot[1]);
+					assert(ftoplot != NULL );
+					fprintf(ftoplot, 
+						"set terminal latex\n"
+						"set format y \"$%%g$\"\n"
+						"set format x \"$%%g$\"\n"
+						"set border 3\n"
+						"set xtics nomirror\n"
+						"set ytics nomirror\n"
+						"unset key\n");
+					fprintf(ftoplot, "plot [%f:%f] [%f:%f] ", 
+						(float)op.x_min, (float)op.x_max, 
+						(float)op.y_min, (float)op.y_max);
+					showPlot($<p>4, ftoplot, &op);
+					fprintf(ftoplot, " with lines\nexit\n");
+					fflush(ftoplot);
+					while(read(from_plot[0], &b, 1) == 1) 
+					{
+						fprintf(yyout, "%c", b);
+					}
+					close(to_plot[1]);
+					close(from_plot[0]);
+					fprintf(yyout, "\n\n");
+				}
+			}
+			delete($<p>4);
 		}
 	;
-actions:	ACTN_BEGIN action_list ACTN_END 
-		{ 
-			$<actn>$ = $<actn>2; 
-		}
+actions:	ACTN_BEGIN action_list ACTN_END {}
 	;
 action_list:	ACTN_ACTION 
 		{ 
-			$<actn>$ = $<actn>1; 
+			actions = $<a>1; 
 		}
 	|	action_list ACTN_SEP ACTN_ACTION
 		{
-			if($<actn>3 & $<actn>1)
+			if($<a>3 & actions)
 				lyyerror(@3, "duplicate actions.");
-			$<actn>$ = ($<actn>3 | $<actn>1); 
+			actions = ($<a>3 | actions); 
 		} 
 	;
 params:		/* empty */
@@ -132,180 +175,213 @@ param_list:	/* empty */
 	;
 param:		P_PRECISION PRMS_SET PRMS_VAL
 		{
-			if(p_param_ck & P_PREC_SET)
+			int prec = -1;
+			if(paramCk & P_PREC_SET)
 				lyyerror(@1, "precision already set.");
 			else
-				p_param_ck |= P_PREC_SET;
-			int prec = -1;
-			if(sscanf($<word>3, "%d", &prec) != 1 || prec <= 0)
+				paramCk |= P_PREC_SET;
+			if(sscanf($<p>3, "%d", &prec) != 1 || prec <= 0)
 				lyyerror(@3, "wrong precision."); 
-			p_ap.precision = prec;
-			free($<word>3);
+			op.precision = prec;
+			free($<p>3);
 		}
 	|	P_XMIN PRMS_SET PRMS_VAL
 		{
-			if(p_param_ck & P_XMIN_SET)
+			double xmin;
+			if(paramCk & P_XMIN_SET)
 				lyyerror(@1, "`xmin' already set.");
 			else
-				p_param_ck |= P_XMIN_SET;
-			double xmin;
-			if(sscanf($<word>3, "%lf", &xmin) != 1)
+				paramCk |= P_XMIN_SET;
+			if(sscanf($<p>3, "%lf", &xmin) != 1)
 				lyyerror(@3, "wrong value of `xmin'."); 
-			p_ap.x_min = xmin;
-			free($<word>3);
+			op.x_min = xmin;
+			free($<p>3);
 		}
 	|	P_XMAX PRMS_SET PRMS_VAL
 		{
-			if(p_param_ck & P_XMAX_SET)
+			double xmax;
+			if(paramCk & P_XMAX_SET)
 				lyyerror(@1, "`xmax' already set.");
 			else
-				p_param_ck |= P_XMAX_SET;
-			double xmax;
-			if(sscanf($<word>3, "%lf", &xmax) != 1)
+				paramCk |= P_XMAX_SET;
+			if(sscanf($<p>3, "%lf", &xmax) != 1)
 				lyyerror(@3, "wrong value of `xmax'."); 
-			p_ap.x_max = xmax;
-			free($<word>3);
+			op.x_max = xmax;
+			free($<p>3);
 		}
 	|	P_YMIN PRMS_SET PRMS_VAL
 		{
-			if(p_param_ck & P_YMIN_SET)
+			double ymin;
+			if(paramCk & P_YMIN_SET)
 				lyyerror(@1, "`ymin' already set.");
 			else
-				p_param_ck |= P_YMIN_SET;
-			double ymin;
-			if(sscanf($<word>3, "%lf", &ymin) != 1)
+				paramCk |= P_YMIN_SET;
+			if(sscanf($<p>3, "%lf", &ymin) != 1)
 				lyyerror(@3, "wrong value of `ymin'."); 
-			p_ap.y_min = ymin;
-			free($<word>3);
+			op.y_min = ymin;
+			free($<p>3);
 		}	
 	|	P_YMAX PRMS_SET PRMS_VAL
 		{
-			if(p_param_ck & P_YMAX_SET)
+			double ymax;
+			if(paramCk & P_YMAX_SET)
 				lyyerror(@1, "`ymax' already set.");
 			else
-				p_param_ck |= P_YMAX_SET;
-			double ymax;
-			if(sscanf($<word>3, "%lf", &ymax) != 1)
+				paramCk |= P_YMAX_SET;
+			if(sscanf($<p>3, "%lf", &ymax) != 1)
 				lyyerror(@3, "wrong value of `ymax'.");
-			p_ap.y_max = ymax;
-			free($<word>3);
+			op.y_max = ymax;
+			free($<p>3);
 		}
 	|	P_WRAP PRMS_SET P_WRAP_1
 		{
-			if(p_param_ck & P_WRAP_SET)
+			if(paramCk & P_WRAP_SET)
 				lyyerror(@1, "`wrap' already set.");
 			else
-				p_param_ck |= P_WRAP_SET;
-			p_ap.wrap = "$";
+				paramCk |= P_WRAP_SET;
+			op.wrap = "$";
 		}
 	|	P_WRAP PRMS_SET P_WRAP_2
 		{
-			if(p_param_ck & P_WRAP_SET)
+			if(paramCk & P_WRAP_SET)
 				lyyerror(@1, "`wrap' already set.");
 			else
-				p_param_ck |= P_WRAP_SET;
-			p_ap.wrap = "$$";
+				paramCk |= P_WRAP_SET;
+			op.wrap = "$$";
 		}
 	;
-expression:	EXPR_BEG expr_eq EXPR_END 
+expression:	EXPR_BEG expr EXPR_END 
 		{ 
-			if(actn & AST_DRAW) lyyerror(@2, "`=' in graph.");
-			$<exp>$ = $<exp>2; 
-		}
-	|	EXPR_BEG expr EXPR_END 
-		{ 
-			$<exp>$ = $<exp>2; 
-		}
-	;
-
-expr_eq:	expr EXPR_EQL expr 
-		{ 
-			$<exp>$ = a_new(AST_EQL, 
-				$<exp>1, $<exp>3); 
+			$<p>$ = $<p>2; 
 		}
 	;
 
 expr:		expr EXPR_ADD expr 
 		{ 
-			$<exp>$ = a_new(AST_OP, 
-				AST_OP_ADD, $<exp>1, $<exp>3); 
+			if(isA($<p>1, Sum()))
+			{
+				append($<p>1, $<p>3);
+				$<p>$ = $<p>1;
+			}
+			else if(isA($<p>3, Sum()))
+			{
+				append($<p>3, $<p>1);
+				$<p>$ = $<p>3;
+			}
+			else
+			{
+				$<p>$ = new(Sum());
+				append($<p>$, $<p>1);
+				append($<p>$, $<p>3);
+			}
 		}
 	|	expr EXPR_SUB expr 
-		{ 
-			$<exp>$ = a_new(AST_OP, 
-				AST_OP_SUB, $<exp>1, $<exp>3); 
+		{
+			switchNegated($<p>3);
+			if(isA($<p>1, Sum()))
+			{
+				append($<p>1, $<p>3);
+				$<p>$ = $<p>1;
+			}
+			else if(isA($<p>3, Sum()))
+			{
+				append($<p>3, $<p>1);
+				$<p>$ = $<p>3;
+			}
+			else
+			{
+				$<p>$ = new(Sum());
+				append($<p>$, $<p>1);
+				append($<p>$, $<p>3);
+			}
+
 		}
 	|	expr EXPR_MUL expr 
 		{ 
-			$<exp>$ = a_new(AST_OP, 
-				AST_OP_MUL, $<exp>1, $<exp>3); 
+			if(isA($<p>1, Product()))
+			{
+				append($<p>1, $<p>3);
+				$<p>$ = $<p>1;
+			}
+			else if(isA($<p>3, Product()))
+			{
+				append($<p>3, $<p>1);
+				$<p>$ = $<p>3;
+			}
+			else
+			{
+				$<p>$ = new(Product());
+				append($<p>$, $<p>1);
+				append($<p>$, $<p>3);
+			}
 		}
 	|	expr EXPR_DIV expr 
 		{ 
-			$<exp>$ = a_new(AST_OP, 
-				AST_OP_DIV, $<exp>1, $<exp>3); 
+			setReversed($<p>3, 1);
+			if(isA($<p>1, Product()))
+			{
+				append($<p>1, $<p>3);
+				$<p>$ = $<p>1;
+			}
+			else if(isA($<p>3, Product()))
+			{
+				append($<p>3, $<p>1);
+				$<p>$ = $<p>3;
+			}
+			else
+			{
+				$<p>$ = new(Product());
+				append($<p>$, $<p>1);
+				append($<p>$, $<p>3);
+			}
 		}
 	|	EXPR_SUB expr %prec NEGATE 
 		{ 
-			$<exp>2->negate = true; 
-			$<exp>$ = $<exp>2; 
+			switchNegated($<p>2);
+			$<p>$ = $<p>2; 
 		}
 	|	EXPR_LBR expr EXPR_RBR 
 		{ 
-			$<exp>$ = $<exp>2; 
+			$<p>$ = $<p>2; 
 		}
 	|	expr EXPR_POW expr 
 		{
-			$<exp>$ = a_new(AST_OP, 
-				AST_OP_POW, $<exp>1, $<exp>3); 
+			$<p>$ = new(Pow());
+			setBase($<p>$, $<p>1);
+			setPower($<p>$, $<p>3);
 		}
-	|	var 
+	|	EXPR_INT
 		{ 
-			$<exp>$ = $<exp>1; 
+			$<p>$ = $<p>1; 
 		}
-	|	EXPR_NUM 
-		{ 
-			$<exp>$ = $<exp>1; 
+	|	EXPR_REAL
+		{
+			$<p>$ = $<p>1;
 		}
 	|	EXPR_BIF1 EXPR_LBR expr EXPR_RBR 
 		{ 
-			ABIF1E($<exp>1) = $<exp>3;
-			$<exp>$ = $<exp>1; 
+			setArg($<p>1, $<p>3);
+			$<p>$ = $<p>1; 
 		}
 	|	EXPR_DIFF EXPR_VAR expr %prec EXPR_DIFF
 		{
-			if(actn & AST_DRAW) lyyerror(@1, "differential in grap.");
-			$<exp>$ = a_new(AST_DIFF, $<exp>3, $<word>2);
+			if(actions & DRAW) lyyerror(@1, "differential in graphic.");
+			$<p>$ = new(Diff());
+			setArg($<p>$, $<p>3);
+			diffBy($<p>$, $<p>2);
+			free($<p>2);
 		}
-	;
-
-var:		EXPR_VAR EXPR_LBR var_depends EXPR_RBR 
+	|	EXPR_VAR EXPR_LBR expr EXPR_RBR 
 		{ 
-			if(actn & AST_DRAW) lyyerror(@2, "nonfree varable in graph.");
-			$<exp>$ = a_new(AST_VAR, $<word>1, $<ldn>3); 
+			if(actions & DRAW) lyyerror(@2, "nonfree varable in graphic.");
+			$<p>$ = new(Var());
+			setFName($<p>$, $<p>1);
+			setArg($<p>$, $<p>3);
 		}
 	|	EXPR_VAR 
 		{
-			if(actn & AST_DRAW)
-			{
-				if(vname != NULL && strcmp(vname, $<word>1))
-					lyyerror(@1, "no unique varable in graph.");
-				else if(vname == NULL)
-					vname = strdup($<word>1);
-			}
-			$<exp>$ = a_new(AST_VAR, $<word>1, u_sl_new()); 
-		}
-	;
-
-var_depends:	EXPR_VAR 
-		{ 
-			$<ldn>$ = u_sl_new();
-			u_sl_append($<ldn>$, $<word>1);
-		}
-	|	EXPR_VAR EXPR_SEP var_depends 
-		{ 
-			u_sl_append($<ldn>3, $<word>1); 
-			$<ldn>$ = $<ldn>3;
+			$<p>$ = new(Var());
+			setName($<p>$, $<p>1);
 		}
 	;
 %%

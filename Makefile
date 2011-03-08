@@ -1,5 +1,5 @@
-CFLAGS	= -std=gnu99 -O0 -g -Wall -Wextra -W 
-SOURCES	=lexer.c parser.c show.c main.c ast.c utils.c reduce.c
+CFLAGS	= -O0 -g -Wall -Wextra -W -pedantic
+SOURCES	=lexer.c parser.c main.c ast.c
 OBJECTS	= $(SOURCES:.c=.o)
 LDFLAGS	= -lmpfr -lgmp
 

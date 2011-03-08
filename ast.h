@@ -1,41 +1,28 @@
 #ifndef __AST_H__
 #define __AST_H__
 
-#include <string.h>
 #include <stdarg.h>
-#include <stdbool.h>
+#include <stddef.h>
 #include <stdlib.h>
+#include <string.h>
 #include <stdio.h>
+#include <assert.h>
+#include <gmp.h>
 #include <mpfr.h>
 
-#include "utils.h"
-
-#define AST_MPFR_PREC 32
-#define AST_PARAMS_DEFAULT(ap) \
+#define PARAMS_DEFAULT(op) \
 	do { \
-		ap.precision = 3; \
-		ap.x_min = 0.0; \
-		ap.x_max = 10.0; \
-		ap.y_min = 0.0; \
-		ap.y_max = 10.0; \
-		ap.wrap = "$"; \
+		op.precision = 3; \
+		op.x_min = 0.0; \
+		op.x_max = 10.0; \
+		op.y_min = 0.0; \
+		op.y_max = 10.0; \
+		op.wrap = "$"; \
 	} while(0)
 
-#define AKLASS(e) (e)->klass
-#define ANUM(e) (e)->p.num
-#define ABIF1K(e) (e)->p.bif1.klass
-#define ABIF1E(e) (e)->p.bif1.exp
-#define AOPK(e) (e)->p.op.klass
-#define AOPL(e) (e)->p.op.lexp
-#define AOPR(e) (e)->p.op.rexp
-#define AVARN(e) (e)->p.var.name
-#define AVARD(e) (e)->p.var.ds
-#define AEQLL(e) (e)->p.eql.lexp
-#define AEQLR(e) (e)->p.eql.rexp
-#define ADIFFE(e) (e)->p.diff.exp
-#define ADIFFB(e) (e)->p.diff.by
+#define MPFR_PREC 128
 
-typedef struct _a_params_t
+typedef struct
 {
 	int precision;
 	double x_min;
@@ -43,108 +30,106 @@ typedef struct _a_params_t
 	double y_min;
 	double y_max;
 	char * wrap;
-} a_params_t;
+} OutParams;
 
-typedef enum _a_actions_t
+typedef enum 
 {
-	AST_SHOW  	= 1 << 0,
-	AST_REDUCE	= 1 << 1,
-	AST_DRAW 	= 1 << 2
-} a_actions_t;
+	SHOW  	= 1 << 0,
+	REDUCE	= 1 << 1,
+	DRAW 	= 1 << 2
+} Actions;
 
-typedef enum
-{
-	AST_OP_ADD,
-	AST_OP_SUB,
-	AST_OP_MUL,
-	AST_OP_DIV,
-	AST_OP_POW
-} a_op_tt;
+void showTex(const void * _self, OutParams * _op);
+void showPlot(const void * _self, FILE * _fp, OutParams * _op);
+void * domainCast(const void * _self, const void * _class);
 
-typedef enum
-{
-	AST_BIF_SIN,
-	AST_BIF_COS,
-	AST_BIF_TAN,
-	AST_BIF_ACOS,
-	AST_BIF_ASIN,
-	AST_BIF_ATAN,
-	AST_BIF_COSH,
-	AST_BIF_SINH,
-	AST_BIF_TANH,
-	AST_BIF_ACOSH,
-	AST_BIF_ASINH,
-	AST_BIF_ATANH 
-} a_bif1_tt;
+const void * Object(void);
+const void * Class(void);
+/* Props */
+int isA(const void * _self, const void * _class);
+int isOf(const void * _self, const void * _class);
+const void * classOf(const void * _self);
+size_t sizeOf(const void * _self);
+void * cast(const void * _self, const void * _class);
+/* Generics */
+void * new(const void * _class, ...);
+void delete(void * _self);
 
-typedef enum
-{
-	AST_EQL,
-	AST_DIFF,
-	AST_NUMERIC,
-	AST_BIF1,
-	AST_OP,
-	AST_VAR
-} a_tt;
+const void * MathClass(void);
+/* Generics */
+void * derive(const void * _self, const char * _by); 
+int isDependOn(const void * _self, const char * _by);
+int equal(const void * _self, const void * _another);
+void switchNegated(void * _self);
+void * copy(const void * _self);
+void append(void * _self, void * _arg);
 
-typedef struct _a_t
-{
-	a_tt klass;
-	bool negate;
-	union
-	{
-		struct 
-		{
-			struct _a_t * exp;
-			char * by;
-		} diff;
-		struct
-		{
-			a_bif1_tt klass;
-			struct _a_t * exp;
-		} bif1;
-		mpfr_t num;
-		struct 
-		{
-			a_op_tt klass;
-			struct _a_t * lexp;
-			struct _a_t * rexp;
-		} op;
-		struct
-		{
-			char * name;
-			u_slist_t * ds;
-		} var;
-		struct
-		{
-			struct _a_t * lexp;
-			struct _a_t * rexp;
-		} eql;
-	} p;
-} a_t;
+const void * MathObject(void);
+/* Props */
+char negated(const void * _self);
+char reversed(const void * _self);
+void setReversed(void * _self, char r);
 
-typedef struct
-{
-	bool is_ast;
-	union 
-	{
-		char * text;
-		struct
-		{
-			a_t * exp;
-			a_actions_t actn;
-			a_params_t * ap;
-		} ast;
-	} p;
-} p_result_t;
+const void * MathShowClass(void);
+/* Generics */
+void showTex(const void * _self, OutParams * _op);
 
-a_t * 		a_new(a_tt, ...);
-void		a_show(a_t *, a_params_t *);
-void		a_reduce(a_t *, a_params_t *);
-void		a_show_g(a_t *, a_params_t *);
-void		a_delete(a_t *);
-a_t *		a_clone(const a_t *);
-u_stack_t *	a_iterate(a_t *);
-bool		a_depend_on(a_t *, const char *);
+const void * MathShowPlotClass(void);
+/* Generics */
+void showPlot(const void * _self, FILE * _fp, OutParams * _op);
 
-#endif // __AST_H__
+const void * DomainClass(void);
+/* Generics */
+void * domainCast(const void * _self, const void * _class);
+
+const void * Integer(void);
+/* Props */
+void iVal(const void * _self, mpz_t v);
+void setIVal(void * _self, mpz_t i);
+void setIValString(void * _self, const char * s);
+
+const void * Real(void);
+/* Props */
+void rVal(const void * _self, mpfr_t v);
+void setRVal(void * _self, mpfr_t d);
+void setRValString(void * _self, const char * s);
+
+const void * Apply_1(void);
+/* Props */
+void * arg(const void * _self);
+void setArg(void * _self, void * _arg);
+
+const void * Combinator(void);
+/* Props */
+void * argv(const void * _self, const size_t i);
+void * setArgv(void * _self, const size_t i, void * _arg);
+
+
+const void * Sum(void);
+const void * Product(void);
+
+const void * Pow(void);
+/* Props */
+void * power(void * _self);
+void setPower(void * _self, void * _power);
+void * base(void * _self);
+void setBase(void * _self, void * _base);
+
+const void * Ln(void);
+const void * Sin(void);
+const void * Cos(void);
+const void * Tan(void);
+
+const void * Var(void);
+/* Props */
+const char * name(const void * _self);
+void setName(void * _self, char * _name);
+
+const void * Diff(void);
+void diffBy(void * _self, const char * _by);
+
+const void * Function(void);
+const char * fname(const void * _self);
+void setFName(void * _self, char * _name);
+
+#endif
